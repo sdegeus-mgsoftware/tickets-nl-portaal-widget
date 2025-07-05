@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Widget Positioning & Animation Test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .test-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #007bff;
+    }
+    
+    .test-section h2 {
+      color: #007bff;
+      margin-top: 0;
+    }
+    
+    .test-controls {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: #007bff;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #0056b3;
+    }
+    
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background: #545b62;
+    }
+    
+    .status {
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+    
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    
+    .tall-content {
+      height: 1000px;
+      background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+      position: relative;
+    }
+    
+    .tall-content::before {
+      content: "Scroll down to test button positioning...";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 18px;
+      color: #6c757d;
+    }
+    
+    .log {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 5px;
+      padding: 15px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎯 Widget Positioning & Animation Test</h1>
+    
+    <div class="test-section">
+      <h2>📍 Button Positioning Test</h2>
+      <p>The "Need Help" button should be anchored to the bottom-right corner of the screen, even when scrolling.</p>
+      
+      <div class="test-controls">
+        <button class="btn btn-primary" onclick="testButtonPosition()">Test Button Position</button>
+        <button class="btn btn-secondary" onclick="scrollToBottom()">Scroll to Bottom</button>
+        <button class="btn btn-secondary" onclick="scrollToTop()">Scroll to Top</button>
+      </div>
+      
+      <div class="status info" id="position-status">
+        ✅ Button should remain fixed at bottom-right corner during scroll
+      </div>
+    </div>
+    
+    <div class="test-section">
+      <h2>🎬 Modal Animation Test</h2>
+      <p>The modal should open with a smooth slide-in animation and close with a slide-out animation.</p>
+      
+      <div class="test-controls">
+        <button class="btn btn-primary" onclick="testModalAnimation()">Test Modal Animation</button>
+        <button class="btn btn-secondary" onclick="toggleWidget()">Toggle Widget</button>
+      </div>
+      
+      <div class="status info" id="animation-status">
+        ✅ Modal should smoothly animate in/out when opened/closed
+      </div>
+    </div>
+    
+    <div class="test-section">
+      <h2>🔄 Button Visibility Test</h2>
+      <p>The button should hide when the modal opens and show when the modal closes.</p>
+      
+      <div class="test-controls">
+        <button class="btn btn-primary" onclick="testButtonVisibility()">Test Button Visibility</button>
+        <button class="btn btn-secondary" onclick="widget.open()">Open Widget</button>
+        <button class="btn btn-secondary" onclick="widget.close()">Close Widget</button>
+      </div>
+      
+      <div class="status info" id="visibility-status">
+        ✅ Button should hide when modal opens, show when modal closes
+      </div>
+    </div>
+    
+    <div class="test-section">
+      <h2>📊 Event Log</h2>
+      <div class="log" id="event-log">Ready to test...</div>
+    </div>
+    
+    <div class="tall-content">
+      <p>This is a tall content area to test scrolling behavior. The "Need Help" button should remain fixed at the bottom-right corner.</p>
+    </div>
+  </div>
+
+  <!-- Load the widget -->
+  <script src="/dist/widget.min.js"></script>
+  <script>
+    // Global widget instance
+    let widget;
+    
+    // Initialize the widget
+    function initWidget() {
+      widget = new TicketWidget({
+        apiKey: 'test-key',
+        orgId: 'test-org',
+        buttonText: 'Need Help?',
+        position: 'bottom-right',
+        theme: 'default',
+        language: 'en',
+        apiUrl: '/api/widget',
+        onOpen: () => log('Widget opened'),
+        onClose: () => log('Widget closed')
+      });
+      
+      log('Widget initialized successfully');
+    }
+    
+    // Logging function
+    function log(message) {
+      const logElement = document.getElementById('event-log');
+      const timestamp = new Date().toLocaleTimeString();
+      logElement.textContent += `[${timestamp}] ${message}\n`;
+      logElement.scrollTop = logElement.scrollHeight;
+    }
+    
+    // Test functions
+    function testButtonPosition() {
+      log('Testing button position...');
+      const button = document.getElementById('ticket-widget-button');
+      if (button) {
+        const rect = button.getBoundingClientRect();
+        const isBottomRight = rect.bottom <= window.innerHeight && rect.right <= window.innerWidth;
+        log(`Button position: ${Math.round(rect.right)}px from left, ${Math.round(window.innerHeight - rect.bottom)}px from bottom`);
+        log(isBottomRight ? '✅ Button correctly positioned' : '❌ Button position incorrect');
+      } else {
+        log('❌ Button not found');
+      }
+    }
+    
+    function testModalAnimation() {
+      log('Testing modal animation...');
+      widget.open();
+      setTimeout(() => {
+        widget.close();
+        log('✅ Modal animation test completed');
+      }, 2000);
+    }
+    
+    function testButtonVisibility() {
+      log('Testing button visibility...');
+      const button = document.getElementById('ticket-widget-button');
+      if (button) {
+        const initialVisible = button.style.display !== 'none';
+        log(`Button initially visible: ${initialVisible}`);
+        
+        widget.open();
+        setTimeout(() => {
+          const hiddenWhenOpen = button.style.display === 'none';
+          log(`Button hidden when modal open: ${hiddenWhenOpen}`);
+          
+          widget.close();
+          setTimeout(() => {
+            const visibleWhenClosed = button.style.display !== 'none';
+            log(`Button visible when modal closed: ${visibleWhenClosed}`);
+            log(hiddenWhenOpen && visibleWhenClosed ? '✅ Button visibility working correctly' : '❌ Button visibility issues detected');
+          }, 500);
+        }, 500);
+      }
+    }
+    
+    function toggleWidget() {
+      widget.toggle();
+      log('Widget toggled');
+    }
+    
+    function scrollToBottom() {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      log('Scrolled to bottom');
+    }
+    
+    function scrollToTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      log('Scrolled to top');
+    }
+    
+    // Initialize when page loads
+    window.addEventListener('load', () => {
+      initWidget();
+    });
+    
+    // Track scroll events
+    window.addEventListener('scroll', () => {
+      const button = document.getElementById('ticket-widget-button');
+      if (button) {
+        const rect = button.getBoundingClientRect();
+        const isStillBottomRight = rect.bottom <= window.innerHeight && rect.right <= window.innerWidth;
+        if (!isStillBottomRight) {
+          log('⚠️ Button position changed during scroll');
+        }
+      }
+    });
+  </script>
+</body>
+</html> 

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Widget Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #555;
+        }
+        .widget-config {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        .current-widget {
+            background: #e8f4f8;
+            border: 2px solid #007cba;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .widget-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ticket Widget Test Page</h1>
+        
+        <div class="test-section">
+            <h2>🎯 Current Active Widget</h2>
+            <div class="current-widget" id="current-widget-info">
+                <p><strong>Theme:</strong> <span id="current-theme">Loading...</span></p>
+                <p><strong>Position:</strong> <span id="current-position">Loading...</span></p>
+                <p><strong>Language:</strong> <span id="current-language">Loading...</span></p>
+                <p><strong>Button Text:</strong> <span id="current-button-text">Loading...</span></p>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔧 Widget Controls</h2>
+            <p>Test the widget functionality:</p>
+            <button onclick="openWidget()">Open Widget</button>
+            <button onclick="closeWidget()">Close Widget</button>
+            <button onclick="toggleWidget()">Toggle Widget</button>
+            <button onclick="showWidgetInfo()">Show Widget Info</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>🎨 Change Theme</h2>
+            <p>Test different themes:</p>
+            <button onclick="changeTheme('default')">Default Theme</button>
+            <button onclick="changeTheme('modern')">Modern Theme</button>
+            <button onclick="changeTheme('minimal')">Minimal Theme</button>
+            <button onclick="changeTheme('dark')">Dark Theme</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>🌍 Change Language</h2>
+            <p>Test different languages:</p>
+            <button onclick="changeLanguage('en')">English</button>
+            <button onclick="changeLanguage('nl')">Dutch (Nederlands)</button>
+            <button onclick="changeLanguage('de')">German (Deutsch)</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>📍 Change Position</h2>
+            <p>Test different positions:</p>
+            <button onclick="changePosition('bottom-right')">Bottom Right</button>
+            <button onclick="changePosition('bottom-left')">Bottom Left</button>
+            <button onclick="changePosition('top-right')">Top Right</button>
+            <button onclick="changePosition('top-left')">Top Left</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>📊 Console Output</h2>
+            <p>Check the browser console (F12) for widget events and debug information.</p>
+            <div class="widget-info">
+                <strong>Expected Events:</strong> widget_initialized, widget_opened, widget_closed, ticket_created, etc.
+            </div>
+        </div>
+    </div>
+    
+    <!-- Load the widget script -->
+    <script src="../dist/widget.min.js"></script>
+    
+    <script>
+        // Global widget instance for testing
+        let testWidget = null;
+        
+        // Initialize a single widget programmatically
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Initializing Ticket Widget...');
+            
+            // Create a single widget instance
+            testWidget = new TicketWidget({
+                apiKey: 'test_key_123',
+                orgId: 'test_org_456',
+                theme: 'default',
+                position: 'bottom-right',
+                language: 'en',
+                buttonText: 'Need Help?',
+                apiUrl: 'http://localhost:8080/api'
+            });
+            
+            console.log('✅ Widget initialized:', testWidget);
+            
+            // Listen for widget events
+            testWidget.on('open', function() {
+                console.log('📂 Widget opened');
+            });
+            
+            testWidget.on('close', function() {
+                console.log('📁 Widget closed');
+            });
+            
+            testWidget.on('success', function(ticket) {
+                console.log('✅ Ticket created:', ticket);
+                alert('Ticket created successfully! Check console for details.');
+            });
+            
+            testWidget.on('error', function(error) {
+                console.error('❌ Widget error:', error);
+                alert('Widget error: ' + error.message);
+            });
+            
+            // Update UI info
+            updateWidgetInfo();
+        });
+        
+        // Manual control functions
+        function openWidget() {
+            if (testWidget) {
+                console.log('🔓 Opening widget...');
+                testWidget.open();
+            } else {
+                console.error('❌ Widget not initialized');
+            }
+        }
+        
+        function closeWidget() {
+            if (testWidget) {
+                console.log('🔒 Closing widget...');
+                testWidget.close();
+            } else {
+                console.error('❌ Widget not initialized');
+            }
+        }
+        
+        function toggleWidget() {
+            if (testWidget) {
+                console.log('🔄 Toggling widget...');
+                testWidget.toggle();
+            } else {
+                console.error('❌ Widget not initialized');
+            }
+        }
+        
+        function showWidgetInfo() {
+            if (testWidget) {
+                const config = testWidget.getConfig();
+                const state = testWidget.getState();
+                console.log('ℹ️ Widget Configuration:', config);
+                console.log('ℹ️ Widget State:', state);
+                alert('Widget info logged to console. Check F12 -> Console tab.');
+            } else {
+                console.error('❌ Widget not initialized');
+            }
+        }
+        
+        function changeTheme(theme) {
+            if (testWidget) {
+                console.log('🎨 Changing theme to:', theme);
+                testWidget.emit('theme:change', theme);
+                updateWidgetInfo();
+            } else {
+                console.error('❌ Widget not initialized');
+            }
+        }
+        
+        function changeLanguage(language) {
+            if (testWidget) {
+                console.log('🌍 Changing language to:', language);
+                testWidget.emit('language:change', language);
+                updateWidgetInfo();
+            } else {
+                console.error('❌ Widget not initialized');
+            }
+        }
+        
+        function changePosition(position) {
+            if (testWidget) {
+                console.log('📍 Changing position to:', position);
+                testWidget.updateConfig({ position: position });
+                updateWidgetInfo();
+            } else {
+                console.error('❌ Widget not initialized');
+            }
+        }
+        
+        function updateWidgetInfo() {
+            if (testWidget) {
+                const config = testWidget.getConfig();
+                document.getElementById('current-theme').textContent = config.theme || 'default';
+                document.getElementById('current-position').textContent = config.position || 'bottom-right';
+                document.getElementById('current-language').textContent = config.language || 'en';
+                document.getElementById('current-button-text').textContent = config.buttonText || 'Need Help?';
+            }
+        }
+    </script>
+</body>
+</html> 
