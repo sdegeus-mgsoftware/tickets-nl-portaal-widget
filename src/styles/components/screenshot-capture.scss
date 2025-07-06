@@ -84,6 +84,9 @@
   overflow: auto;
   position: relative;
   background: #f8f9fa;
+  min-height: 0; // Important for flexbox scrolling
+  min-width: 0;  // Important for flexbox scrolling
+  padding: 20px; // Add padding for better spacing
   
   // Custom scrollbar styling
   &::-webkit-scrollbar {
@@ -117,6 +120,7 @@
   background: white;
   border: 1px solid #e5e7eb;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 8px; // Add rounded corners for better appearance
   
   &:hover {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);

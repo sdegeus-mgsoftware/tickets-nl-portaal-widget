@@ -29,6 +29,10 @@ export default class VisualFeedbackModal {
     this.floatingButton = null;
     this.modalElement = null;
     this.floatingStopButton = null;
+    
+    // Store original styles to restore later
+    this.originalBodyStyles = null;
+    this.originalHtmlStyles = null;
 
     this.init();
   }
@@ -185,56 +189,172 @@ export default class VisualFeedbackModal {
    * Show the modal
    */
   async show() {
-    if (this.isVisible) return;
+    console.log('🚀 [SHOW] Modal show() method called!');
+    
+    if (this.isVisible) {
+      console.log('🔍 [SHOW] Modal already visible, returning');
+      return;
+    }
 
     console.log('🔍 [SHOW] Starting show() method');
     console.log('🔍 [SHOW] Modal element exists:', !!this.modalElement);
     console.log('🔍 [SHOW] Modal element in DOM:', document.contains(this.modalElement));
 
     this.isVisible = true;
-    this.modalElement.style.display = 'flex';
     
-    // AGGRESSIVE DEBUG: Force visibility with inline styles AND !important via cssText
+    // Store original body and html styles before any modifications
+    this.originalBodyStyles = document.body.getAttribute('style') || '';
+    this.originalHtmlStyles = document.documentElement.getAttribute('style') || '';
+    
+    // Apply minimal body styles - only prevent scrolling, don't change layout
+    const currentBodyStyle = document.body.getAttribute('style') || '';
+    document.body.setAttribute('style', currentBodyStyle + '; overflow: hidden !important;');
+    
+    // Modal container - Clean overlay approach
     this.modalElement.style.cssText = `
       position: fixed !important;
-      top: 0px !important;
-      left: 0px !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
       width: 100vw !important;
       height: 100vh !important;
       z-index: 9999999 !important;
-      background-color: rgba(255, 0, 0, 0.9) !important;
+      background: rgba(0, 0, 0, 0.8) !important;
       display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      backdrop-filter: blur(5px) !important;
       visibility: visible !important;
       opacity: 1 !important;
-      transform: none !important;
-      clip: none !important;
-      clip-path: none !important;
+      pointer-events: auto !important;
+      box-sizing: border-box !important;
     `;
     
-    console.log('🔧 [SHOW] Applied aggressive inline styles with !important');
+    console.log('🔧 [SHOW] Applied clean modal overlay - no body layout changes');
     console.log('🔧 [SHOW] Modal rect:', this.modalElement.getBoundingClientRect());
     console.log('🔧 [SHOW] Modal computed display:', window.getComputedStyle(this.modalElement).display);
     console.log('🔧 [SHOW] Modal computed position:', window.getComputedStyle(this.modalElement).position);
     console.log('🔧 [SHOW] Modal computed zIndex:', window.getComputedStyle(this.modalElement).zIndex);
     console.log('🔧 [SHOW] Modal computed backgroundColor:', window.getComputedStyle(this.modalElement).backgroundColor);
     
+    // Content container - Fuller screen modal window
+    const contentContainer = this.modalElement.querySelector('.visual-feedback-content');
+    if (contentContainer) {
+      contentContainer.style.cssText = `
+        background: white !important;
+        border-radius: 8px !important;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3) !important;
+        width: 98vw !important;
+        height: 95vh !important;
+        max-width: none !important;
+        max-height: none !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        position: relative !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        z-index: 10000000 !important;
+      `;
+      
+      console.log('🔧 [SHOW] Applied fuller screen modal content styling');
+      console.log('🔧 [SHOW] Content container rect:', contentContainer.getBoundingClientRect());
+    }
+    
+    // Ensure the modal body can expand to fill available space
+    const modalBody = this.modalElement.querySelector('.visual-feedback-body');
+    if (modalBody) {
+      modalBody.style.cssText = `
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+      `;
+      console.log('🔧 [SHOW] Applied modal body styling');
+    }
+    
     // Show loading screen
-    this.modalElement.querySelector('#screenshotLoading').style.display = 'block';
-    this.modalElement.querySelector('#feedbackMain').style.display = 'none';
+    const loadingElement = this.modalElement.querySelector('#screenshotLoading');
+    const mainElement = this.modalElement.querySelector('#feedbackMain');
+    
+    console.log('🔧 [SHOW] Loading element:', !!loadingElement);
+    console.log('🔧 [SHOW] Main element:', !!mainElement);
+    
+    if (loadingElement) {
+      loadingElement.style.cssText = `
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex: 1 !important;
+        text-align: center !important;
+      `;
+      console.log('🔧 [SHOW] Loading element visible styles:', loadingElement.style.cssText);
+    }
+    if (mainElement) {
+      mainElement.style.cssText = `
+        display: none !important;
+        flex: 1 !important;
+        flex-direction: row !important;
+        overflow: hidden !important;
+      `;
+      console.log('🔧 [SHOW] Main element hidden styles:', mainElement.style.cssText);
+    }
 
     try {
+      console.log('🔧 [SHOW] Starting screenshot capture...');
       // Take screenshot
       await this.components.screenshotCapture.takeScreenshot();
+      console.log('🔧 [SHOW] Screenshot captured successfully');
       
       // Initialize system info
       const systemInfo = await this.components.systemInfo.gather();
+      console.log('🔧 [SHOW] System info gathered');
       
       // Initialize chat with system info
       this.components.chatInterface.initialize(systemInfo);
+      console.log('🔧 [SHOW] Chat interface initialized');
       
       // Hide loading and show main content
-      this.modalElement.querySelector('#screenshotLoading').style.display = 'none';
-      this.modalElement.querySelector('#feedbackMain').style.display = 'flex';
+      console.log('🔧 [SHOW] Switching from loading to main content...');
+      if (loadingElement) {
+        loadingElement.style.display = 'none';
+        console.log('🔧 [SHOW] Loading hidden');
+      }
+      if (mainElement) {
+        mainElement.style.cssText = `
+          display: flex !important;
+          flex: 1 !important;
+          flex-direction: row !important;
+          overflow: hidden !important;
+        `;
+        console.log('🔧 [SHOW] Main content shown with styles:', mainElement.style.cssText);
+      }
+      
+      console.log('🔧 [SHOW] Modal should now be fully visible');
+    
+    // Debug CSS visibility issues
+    console.log('🔍 [DEBUG] Final modal visibility check:');
+    console.log('🔍 [DEBUG] Modal display:', window.getComputedStyle(this.modalElement).display);
+    console.log('🔍 [DEBUG] Modal visibility:', window.getComputedStyle(this.modalElement).visibility);
+    console.log('🔍 [DEBUG] Modal opacity:', window.getComputedStyle(this.modalElement).opacity);
+    console.log('🔍 [DEBUG] Modal z-index:', window.getComputedStyle(this.modalElement).zIndex);
+    console.log('🔍 [DEBUG] Modal position:', window.getComputedStyle(this.modalElement).position);
+    console.log('🔍 [DEBUG] Modal top:', window.getComputedStyle(this.modalElement).top);
+    console.log('🔍 [DEBUG] Modal left:', window.getComputedStyle(this.modalElement).left);
+    console.log('🔍 [DEBUG] Modal width:', window.getComputedStyle(this.modalElement).width);
+    console.log('🔍 [DEBUG] Modal height:', window.getComputedStyle(this.modalElement).height);
+    console.log('🔍 [DEBUG] Modal background:', window.getComputedStyle(this.modalElement).backgroundColor);
+    
+    // Check if modal is being covered by other elements
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    const topElement = document.elementFromPoint(centerX, centerY);
+    console.log('🔍 [DEBUG] Element at center of screen:', topElement);
+    console.log('🔍 [DEBUG] Is modal at center?:', topElement === this.modalElement || this.modalElement.contains(topElement));
+    
+    // Modal is now working successfully!
       
       // Trigger callback
       if (this.options.onOpen) {
@@ -259,6 +379,18 @@ export default class VisualFeedbackModal {
 
     this.isVisible = false;
     this.modalElement.style.display = 'none';
+    
+    // Restore original body and html styles
+    if (this.originalBodyStyles !== null) {
+      document.body.setAttribute('style', this.originalBodyStyles);
+    } else {
+      document.body.removeAttribute('style');
+    }
+    if (this.originalHtmlStyles !== null) {
+      document.documentElement.setAttribute('style', this.originalHtmlStyles);
+    } else {
+      document.documentElement.removeAttribute('style');
+    }
     
     // Reset components
     this.components.screenshotCapture?.reset();
@@ -287,6 +419,13 @@ export default class VisualFeedbackModal {
       // Hide modal and show floating stop button
       this.modalElement.style.display = 'none';
       this.floatingStopButton.style.display = 'flex';
+      
+      // Temporarily restore body styles while recording
+      if (this.originalBodyStyles !== null) {
+        document.body.setAttribute('style', this.originalBodyStyles);
+      } else {
+        document.body.removeAttribute('style');
+      }
       
       // Add instruction message
       this.components.chatInterface.addMessage('ai', `🎬 **Recording Started!**
@@ -317,6 +456,10 @@ The modal has been minimized so you can interact with the page.
     // Show modal and hide floating stop button
     this.modalElement.style.display = 'flex';
     this.floatingStopButton.style.display = 'none';
+    
+    // Re-apply overflow hidden to body when modal returns
+    const currentBodyStyle = document.body.getAttribute('style') || '';
+    document.body.setAttribute('style', currentBodyStyle + '; overflow: hidden !important;');
     
     // Get recording data
     const recordingData = this.components.stepReplication.getRecordingData();

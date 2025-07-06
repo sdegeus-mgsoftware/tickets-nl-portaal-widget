@@ -116,6 +116,7 @@ export default class VisualFeedbackWidget {
     if (this.isInitialized || this.isDestroyed) return;
     
     // Create modal component
+    console.log('🔧 [WIDGET] Creating modal component...');
     this.modal = new VisualFeedbackModal({
       ...this.config,
       onOpen: this.handleModalOpen.bind(this),
@@ -123,6 +124,7 @@ export default class VisualFeedbackWidget {
       onSubmit: this.handleModalSubmit.bind(this),
       onError: this.handleModalError.bind(this)
     });
+    console.log('🔧 [WIDGET] Modal component created:', !!this.modal);
     
     // Create trigger button if enabled
     if (this.config.showTriggerButton) {
@@ -147,7 +149,12 @@ export default class VisualFeedbackWidget {
    * Create the trigger button
    */
   createTriggerButton() {
-    if (this.triggerButton) return;
+    console.log('🔘 [BUTTON] Creating trigger button...');
+    
+    if (this.triggerButton) {
+      console.log('🔘 [BUTTON] Button already exists');
+      return;
+    }
     
     this.triggerButton = document.createElement('button');
     this.triggerButton.className = 'help-button';
@@ -155,13 +162,18 @@ export default class VisualFeedbackWidget {
     this.triggerButton.setAttribute('aria-label', this.config.ariaLabel);
     this.triggerButton.style.cssText = this.getTriggerButtonStyles();
     
+    console.log('🔘 [BUTTON] Button created with text:', this.config.triggerButtonText);
+    console.log('🔘 [BUTTON] Button styles:', this.getTriggerButtonStyles());
+    
     // Add click handler
     this.triggerButton.addEventListener('click', () => {
+      console.log('🔘 [BUTTON] Trigger button clicked!');
       this.open();
     });
     
     // Add to page
     document.body.appendChild(this.triggerButton);
+    console.log('🔘 [BUTTON] Button added to page');
   }
   
   /**
@@ -196,8 +208,16 @@ export default class VisualFeedbackWidget {
    * Open the feedback modal
    */
   open() {
-    if (this.isDestroyed || !this.modal) return;
+    console.log('🔓 [WIDGET] open() method called');
+    console.log('🔓 [WIDGET] isDestroyed:', this.isDestroyed);
+    console.log('🔓 [WIDGET] modal exists:', !!this.modal);
     
+    if (this.isDestroyed || !this.modal) {
+      console.log('🔓 [WIDGET] Cannot open - widget destroyed or modal missing');
+      return;
+    }
+    
+    console.log('🔓 [WIDGET] Calling modal.show()');
     this.modal.show();
   }
   

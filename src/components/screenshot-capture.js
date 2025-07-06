@@ -21,6 +21,7 @@ export default class ScreenshotCapture {
     this.startX = 0;
     this.startY = 0;
     this.originalImageData = null;
+    this.resizeTimeout = null;
 
     this.init();
   }
@@ -64,8 +65,9 @@ export default class ScreenshotCapture {
         </div>
         
         <div class="tool-group">
-          <button class="tool-btn" onclick="this.clearAnnotations()">🗑️ Clear</button>
-          <button class="tool-btn" onclick="this.undoAnnotation()" title="Undo last annotation (Ctrl+Z)">↶ Undo</button>
+          <button class="tool-btn" data-action="clear">🗑️ Clear</button>
+          <button class="tool-btn" data-action="undo" title="Undo last annotation (Ctrl+Z)">↶ Undo</button>
+          <button class="tool-btn" data-action="center" title="Center screenshot view">🎯 Center</button>
         </div>
         
         <div class="tool-group">
@@ -102,6 +104,20 @@ export default class ScreenshotCapture {
       });
     });
 
+    // Action buttons
+    this.options.container.querySelectorAll('[data-action]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const action = e.target.dataset.action;
+        if (action === 'clear') {
+          this.clearAnnotations();
+        } else if (action === 'undo') {
+          this.undoAnnotation();
+        } else if (action === 'center') {
+          this.centerCanvas();
+        }
+      });
+    });
+
     // Canvas drawing events
     this.setupDrawingEvents();
 
@@ -110,6 +126,17 @@ export default class ScreenshotCapture {
       if (e.ctrlKey && e.key === 'z') {
         e.preventDefault();
         this.undoAnnotation();
+      }
+    });
+
+    // Window resize handler to recenter canvas
+    window.addEventListener('resize', () => {
+      if (this.canvas && this.originalImageData) {
+        // Debounce resize events
+        clearTimeout(this.resizeTimeout);
+        this.resizeTimeout = setTimeout(() => {
+          this.centerCanvas();
+        }, 300);
       }
     });
   }
@@ -238,8 +265,74 @@ export default class ScreenshotCapture {
       if (dimensionsDisplay) {
         dimensionsDisplay.textContent = `${img.width}×${img.height}px`;
       }
+      
+      // Center the canvas within the scrollable container
+      // Use multiple timeouts to ensure it works even with slow loading
+      this.centerCanvas();
+      setTimeout(() => this.centerCanvas(), 250);
+      setTimeout(() => this.centerCanvas(), 500);
     };
     img.src = this.originalScreenshot;
+  }
+
+  /**
+   * Center the canvas within its scrollable container
+   */
+  centerCanvas() {
+    const container = this.options.container.querySelector('.screenshot-container');
+    if (!container || !this.canvas) {
+      console.log('🎯 [CENTER] Missing container or canvas:', { container: !!container, canvas: !!this.canvas });
+      return;
+    }
+    
+    // Use multiple attempts with increasing delays to ensure layout is complete
+    const attemptCentering = (attempt = 1) => {
+      console.log(`🎯 [CENTER] Attempting to center (attempt ${attempt})`);
+      
+      // Get container dimensions
+      const containerRect = container.getBoundingClientRect();
+      const containerStyle = window.getComputedStyle(container);
+      const containerPadding = parseInt(containerStyle.padding) || 20;
+      
+      // Calculate actual scrollable dimensions
+      const scrollableWidth = containerRect.width - (containerPadding * 2);
+      const scrollableHeight = containerRect.height - (containerPadding * 2);
+      
+      // Get canvas dimensions
+      const canvasWidth = this.canvas.width;
+      const canvasHeight = this.canvas.height;
+      
+      // Calculate center position
+      const centerX = Math.max(0, (canvasWidth - scrollableWidth) / 2);
+      const centerY = Math.max(0, (canvasHeight - scrollableHeight) / 2);
+      
+      // Set scroll position
+      container.scrollLeft = centerX;
+      container.scrollTop = centerY;
+      
+      const actualScrollX = container.scrollLeft;
+      const actualScrollY = container.scrollTop;
+      
+      console.log('🎯 [CENTER] Centering details:', {
+        attempt,
+        canvasSize: { width: canvasWidth, height: canvasHeight },
+        containerRect: { width: containerRect.width, height: containerRect.height },
+        scrollableSize: { width: scrollableWidth, height: scrollableHeight },
+        targetScroll: { x: centerX, y: centerY },
+        actualScroll: { x: actualScrollX, y: actualScrollY },
+        isScrollable: container.scrollWidth > container.clientWidth || container.scrollHeight > container.clientHeight
+      });
+      
+      // If scrolling didn't work as expected and we have more attempts, try again
+      if ((actualScrollX !== centerX || actualScrollY !== centerY) && attempt < 3) {
+        setTimeout(() => attemptCentering(attempt + 1), 200 * attempt);
+      } else {
+        console.log('🎯 [CENTER] Centering complete');
+      }
+    };
+    
+    // Start first attempt after a short delay
+    setTimeout(() => attemptCentering(1), 100);
   }
 
   /**
@@ -468,6 +561,12 @@ export default class ScreenshotCapture {
    * Destroy the component and clean up
    */
   destroy() {
+    // Clear resize timeout
+    if (this.resizeTimeout) {
+      clearTimeout(this.resizeTimeout);
+      this.resizeTimeout = null;
+    }
+    
     // Remove event listeners
     document.removeEventListener('keydown', this.handleKeyboardShortcuts);
     
