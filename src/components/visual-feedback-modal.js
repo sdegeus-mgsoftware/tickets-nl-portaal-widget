@@ -187,123 +187,54 @@ export default class VisualFeedbackModal {
   async show() {
     if (this.isVisible) return;
 
-    console.log('🔍 [DEBUG] Modal show() called');
-    console.log('🔍 [DEBUG] Modal element:', this.modalElement);
-    console.log('🔍 [DEBUG] Modal element in DOM:', document.contains(this.modalElement));
+    console.log('🔍 [SHOW] Starting show() method');
+    console.log('🔍 [SHOW] Modal element exists:', !!this.modalElement);
+    console.log('🔍 [SHOW] Modal element in DOM:', document.contains(this.modalElement));
 
     this.isVisible = true;
     this.modalElement.style.display = 'flex';
     
-    console.log('🔍 [DEBUG] Modal display set to flex');
-    console.log('🔍 [DEBUG] Modal computed styles:', window.getComputedStyle(this.modalElement));
-    console.log('🔍 [DEBUG] Modal position:', this.modalElement.getBoundingClientRect());
+    // AGGRESSIVE DEBUG: Force visibility with inline styles AND !important via cssText
+    this.modalElement.style.cssText = `
+      position: fixed !important;
+      top: 0px !important;
+      left: 0px !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 9999999 !important;
+      background-color: rgba(255, 0, 0, 0.9) !important;
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      transform: none !important;
+      clip: none !important;
+      clip-path: none !important;
+    `;
     
-    // Show loading
+    console.log('🔧 [SHOW] Applied aggressive inline styles with !important');
+    console.log('🔧 [SHOW] Modal rect:', this.modalElement.getBoundingClientRect());
+    console.log('🔧 [SHOW] Modal computed display:', window.getComputedStyle(this.modalElement).display);
+    console.log('🔧 [SHOW] Modal computed position:', window.getComputedStyle(this.modalElement).position);
+    console.log('🔧 [SHOW] Modal computed zIndex:', window.getComputedStyle(this.modalElement).zIndex);
+    console.log('🔧 [SHOW] Modal computed backgroundColor:', window.getComputedStyle(this.modalElement).backgroundColor);
+    
+    // Show loading screen
     this.modalElement.querySelector('#screenshotLoading').style.display = 'block';
     this.modalElement.querySelector('#feedbackMain').style.display = 'none';
 
-    console.log('🔍 [DEBUG] Loading screen display:', this.modalElement.querySelector('#screenshotLoading').style.display);
-    console.log('🔍 [DEBUG] Loading screen element:', this.modalElement.querySelector('#screenshotLoading'));
-    console.log('🔍 [DEBUG] Main content display:', this.modalElement.querySelector('#feedbackMain').style.display);
-
     try {
-      console.log('🔍 [DEBUG] Starting screenshot capture...');
       // Take screenshot
       await this.components.screenshotCapture.takeScreenshot();
-      console.log('🔍 [DEBUG] Screenshot capture complete');
       
       // Initialize system info
       const systemInfo = await this.components.systemInfo.gather();
-      console.log('🔍 [DEBUG] System info gathered');
       
       // Initialize chat with system info
       this.components.chatInterface.initialize(systemInfo);
-      console.log('🔍 [DEBUG] Chat interface initialized');
       
       // Hide loading and show main content
       this.modalElement.querySelector('#screenshotLoading').style.display = 'none';
       this.modalElement.querySelector('#feedbackMain').style.display = 'flex';
-      
-      console.log('🔍 [DEBUG] Content switched - Loading hidden, Main shown');
-      console.log('🔍 [DEBUG] Loading screen final display:', this.modalElement.querySelector('#screenshotLoading').style.display);
-      console.log('🔍 [DEBUG] Main content final display:', this.modalElement.querySelector('#feedbackMain').style.display);
-      
-      console.log('🔍 [DEBUG] Modal should now be visible');
-      console.log('🔍 [DEBUG] Final modal position:', this.modalElement.getBoundingClientRect());
-      
-      // VISUAL TEST: Force modal to be visible with bright background
-      console.log('🔍 [DEBUG] VISUAL TEST: Forcing modal to be visible with red background');
-      this.modalElement.style.backgroundColor = 'rgba(255, 0, 0, 0.9)';
-      this.modalElement.style.zIndex = '9999999';
-      this.modalElement.style.position = 'fixed';
-      this.modalElement.style.top = '0';
-      this.modalElement.style.left = '0';
-      this.modalElement.style.width = '100vw';
-      this.modalElement.style.height = '100vh';
-      this.modalElement.style.display = 'flex';
-      console.log('🔍 [DEBUG] Visual test applied - you should see a RED overlay covering the entire screen');
-      
-      // COMPREHENSIVE CSS DEBUG
-      const computedStyles = window.getComputedStyle(this.modalElement);
-      console.log('🔍 [DEBUG] ACTUAL COMPUTED STYLES:');
-      console.log('🔍 [DEBUG] Position:', computedStyles.position);
-      console.log('🔍 [DEBUG] Display:', computedStyles.display);
-      console.log('🔍 [DEBUG] Z-index:', computedStyles.zIndex);
-      console.log('🔍 [DEBUG] Background-color:', computedStyles.backgroundColor);
-      console.log('🔍 [DEBUG] Width:', computedStyles.width);
-      console.log('🔍 [DEBUG] Height:', computedStyles.height);
-      console.log('🔍 [DEBUG] Top:', computedStyles.top);
-      console.log('🔍 [DEBUG] Left:', computedStyles.left);
-      console.log('🔍 [DEBUG] Visibility:', computedStyles.visibility);
-      console.log('🔍 [DEBUG] Opacity:', computedStyles.opacity);
-      console.log('🔍 [DEBUG] Transform:', computedStyles.transform);
-      console.log('🔍 [DEBUG] Clip:', computedStyles.clip);
-      console.log('🔍 [DEBUG] Clip-path:', computedStyles.clipPath);
-      
-      // CHECK CSS LOADING
-      const cssLinks = document.querySelectorAll('link[rel="stylesheet"]');
-      console.log('🔍 [DEBUG] CSS files loaded:', cssLinks.length);
-      cssLinks.forEach((link, i) => {
-        console.log(`🔍 [DEBUG] CSS ${i+1}:`, link.href, link.sheet ? 'LOADED' : 'NOT LOADED');
-      });
-      
-      // ALTERNATIVE VISIBILITY METHODS
-      console.log('🔍 [DEBUG] Trying alternative visibility methods...');
-      
-      // Method 1: Force inline styles with !important via CSS text
-      this.modalElement.style.cssText = `
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        background-color: rgba(255, 0, 0, 0.9) !important;
-        z-index: 9999999 !important;
-        display: flex !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-      `;
-      
-      // Method 2: Remove all CSS classes and force basic visibility
-      const originalClasses = this.modalElement.className;
-      this.modalElement.className = '';
-      console.log('🔍 [DEBUG] Removed CSS classes, original:', originalClasses);
-      
-      // Method 3: Check parent elements
-      let parent = this.modalElement.parentElement;
-      while (parent) {
-        const parentStyles = window.getComputedStyle(parent);
-        console.log('🔍 [DEBUG] Parent element:', parent.tagName, {
-          position: parentStyles.position,
-          overflow: parentStyles.overflow,
-          zIndex: parentStyles.zIndex,
-          transform: parentStyles.transform
-        });
-        parent = parent.parentElement;
-        if (parent === document.documentElement) break;
-      }
-      
-      console.log('🔍 [DEBUG] If you STILL cannot see a red overlay, there is a fundamental CSS or browser issue');
       
       // Trigger callback
       if (this.options.onOpen) {

@@ -181,7 +181,8 @@ export default class ScreenshotCapture {
       const modal = document.getElementById('visualFeedbackModal');
       const stopButton = document.getElementById('stopRecordingFloating');
       
-      const modalDisplay = modal ? modal.style.display : 'none';
+      // Store the current cssText to restore forced styles properly
+      const modalCssText = modal ? modal.style.cssText : '';
       const stopButtonDisplay = stopButton ? stopButton.style.display : 'none';
       
       if (modal) modal.style.display = 'none';
@@ -199,8 +200,12 @@ export default class ScreenshotCapture {
         scrollY: 0
       });
       
-      // Restore modal visibility
-      if (modal) modal.style.display = modalDisplay;
+      // Restore modal with original forced styles to prevent flicker
+      if (modal && modalCssText) {
+        modal.style.cssText = modalCssText;
+      } else if (modal) {
+        modal.style.display = 'flex';
+      }
       if (stopButton) stopButton.style.display = stopButtonDisplay;
       
       this.originalScreenshot = canvas.toDataURL('image/png');
