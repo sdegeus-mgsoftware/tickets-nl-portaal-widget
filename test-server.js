@@ -89,8 +89,8 @@ server.listen(PORT, () => {
   console.log('Available test pages:');
   console.log(`  📄 Widget Test Page: http://localhost:${PORT}/examples/`);
   console.log(`  📄 Built HTML: http://localhost:${PORT}/dist/`);
-  console.log(`  🔧 Widget JS: http://localhost:${PORT}/dist/widget.min.js`);
-  console.log(`  🎨 Widget CSS: http://localhost:${PORT}/dist/widget.css`);
+  console.log(`  🔧 Widget JS: http://localhost:${PORT}/dist/visual-feedback-widget.min.js`);
+  console.log(`  🎨 Widget CSS: http://localhost:${PORT}/dist/visual-feedback-widget.min.css`);
   console.log('\nPress Ctrl+C to stop the server\n');
 });
 
@@ -152,6 +152,18 @@ const handleApiRequest = (req, res) => {
       res.end(JSON.stringify({
         success: true,
         message: 'Analytics tracked'
+      }));
+      return true;
+    }
+    
+    if (req.url === '/api/test-endpoint' && req.method === 'POST') {
+      // Mock test endpoint for visual feedback widget
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        success: true,
+        message: 'Visual feedback received',
+        ticket_id: 'VF-' + Date.now(),
+        timestamp: new Date().toISOString()
       }));
       return true;
     }

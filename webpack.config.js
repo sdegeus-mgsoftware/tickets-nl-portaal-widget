@@ -1,80 +1,149 @@
 const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
-  const isDevelopment = !isProduction;
   
   return {
-    entry: './src/index.ts',
+    mode: isProduction ? 'production' : 'development',
+    
+    entry: {
+      'visual-feedback-widget': './src/visual-feedback-widget.js'
+    },
+    
     output: {
       path: path.resolve(__dirname, 'dist'),
-      filename: 'widget.min.js',
+      filename: isProduction ? '[name].min.js' : '[name].js',
       library: {
-        name: 'TicketWidget',
+        name: 'VisualFeedbackWidget',
         type: 'umd',
         export: 'default'
       },
       globalObject: 'this',
       clean: true
     },
-    resolve: {
-      extensions: ['.ts', '.js', '.json'],
-      alias: {
-        '@': path.resolve(__dirname, 'src'),
-        '@/core': path.resolve(__dirname, 'src/core'),
-        '@/components': path.resolve(__dirname, 'src/components'),
-        '@/styles': path.resolve(__dirname, 'src/styles'),
-        '@/utils': path.resolve(__dirname, 'src/utils'),
-        '@/i18n': path.resolve(__dirname, 'src/i18n')
-      }
-    },
+    
     module: {
       rules: [
         {
-          test: /\.ts$/,
-          use: 'ts-loader',
-          exclude: /node_modules/
+          test: /\.js$/,
+          exclude: /node_modules/,
+          use: {
+            loader: 'babel-loader',
+            options: {
+              presets: [
+                ['@babel/preset-env', {
+                  targets: {
+                    browsers: ['> 1%', 'last 2 versions', 'ie >= 11']
+                  }
+                }]
+              ]
+            }
+          }
         },
         {
-          test: /\.s?css$/,
+          test: /\.scss$/,
           use: [
-            isProduction ? MiniCssExtractPlugin.loader : 'style-loader',
+            MiniCssExtractPlugin.loader,
             'css-loader',
-            'postcss-loader',
+            {
+              loader: 'postcss-loader',
+              options: {
+                postcssOptions: {
+                  plugins: [
+                    ['autoprefixer', {
+                      overrideBrowserslist: ['> 1%', 'last 2 versions', 'ie >= 11']
+                    }]
+                  ]
+                }
+              }
+            },
             'sass-loader'
           ]
         },
         {
-          test: /\.(png|svg|jpg|jpeg|gif)$/i,
-          type: 'asset/resource'
+          test: /\.css$/,
+          use: [
+            MiniCssExtractPlugin.loader,
+            'css-loader'
+          ]
+        },
+        {
+          test: /\.(png|jpg|jpeg|gif|svg)$/,
+          type: 'asset/resource',
+          generator: {
+            filename: 'images/[name][ext]'
+          }
+        },
+        {
+          test: /\.(woff|woff2|eot|ttf|otf)$/,
+          type: 'asset/resource',
+          generator: {
+            filename: 'fonts/[name][ext]'
+          }
         }
       ]
     },
+    
     plugins: [
       new MiniCssExtractPlugin({
-        filename: 'widget.css'
-      }),
-      new HtmlWebpackPlugin({
-        template: './examples/index.html',
-        filename: 'index.html',
-        inject: 'body'
+        filename: isProduction ? '[name].min.css' : '[name].css'
       })
     ],
+    
+    optimization: {
+      minimize: isProduction,
+      minimizer: [
+        new TerserPlugin({
+          extractComments: false,
+          terserOptions: {
+            compress: {
+              drop_console: true,
+              drop_debugger: true
+            },
+            format: {
+              comments: false
+            }
+          }
+        }),
+        new CssMinimizerPlugin({
+          minimizerOptions: {
+            preset: [
+              'default',
+              {
+                discardComments: { removeAll: true }
+              }
+            ]
+          }
+        })
+      ]
+    },
+    
+    resolve: {
+      extensions: ['.js', '.scss', '.css']
+    },
+    
+    devtool: isProduction ? 'source-map' : 'inline-source-map',
+    
     devServer: {
       static: {
-        directory: path.join(__dirname, 'dist'),
+        directory: path.join(__dirname, 'examples'),
+        publicPath: '/'
       },
       compress: true,
-      port: 9000,
-      hot: true,
+      port: 8080,
       open: true,
+      hot: true,
       historyApiFallback: true
     },
-    optimization: {
-      minimize: isProduction
-    },
-    devtool: isDevelopment ? 'eval-source-map' : 'source-map'
+    
+    stats: {
+      colors: true,
+      modules: false,
+      chunks: false,
+      chunkModules: false
+    }
   };
 }; 

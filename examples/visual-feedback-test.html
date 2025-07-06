@@ -70,6 +70,80 @@
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
     }
+
+    /* Floating Stop Recording Button */
+    .stop-recording-floating {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 999999;
+      background: #ef4444;
+      color: white;
+      border: 3px solid #fef2f2;
+      border-radius: 50px;
+      padding: 18px 28px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 180px;
+      justify-content: center;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .stop-recording-floating:hover {
+      background: #dc2626;
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 12px 30px rgba(239, 68, 68, 0.5);
+      border-color: #fff;
+    }
+
+    .recording-pulse {
+      width: 14px;
+      height: 14px;
+      background: #fef2f2;
+      border-radius: 50%;
+      animation: pulse 1.2s infinite;
+    }
+
+    .stop-icon {
+      font-size: 18px;
+      animation: blink 2s infinite;
+    }
+
+    .stop-text {
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    @keyframes float {
+      0%, 100% { 
+        transform: translateY(0px); 
+      }
+      50% { 
+        transform: translateY(-5px); 
+      }
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0.7; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { 
+        opacity: 1; 
+        transform: scale(1);
+      }
+      50% { 
+        opacity: 0.4; 
+        transform: scale(1.2);
+      }
+    }
     
     /* Simple Visual Feedback Modal Styles */
     .visual-feedback-modal {
@@ -509,6 +583,127 @@
     .network-details .log-entries {
       padding: 6px;
     }
+
+    /* Replication Recording Styles */
+    .replication-controls {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .replication-header h4 {
+      color: #1e293b;
+      margin: 0 0 4px 0;
+    }
+
+    .replication-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .replication-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 6px;
+      background: white;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .replication-btn:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+
+    .replication-btn.start-recording {
+      border-color: #10b981;
+      color: #065f46;
+    }
+
+    .replication-btn.start-recording:hover {
+      background: #ecfdf5;
+      border-color: #059669;
+    }
+
+    .replication-btn.stop-recording {
+      border-color: #ef4444;
+      color: #991b1b;
+    }
+
+    .replication-btn.stop-recording:hover {
+      background: #fef2f2;
+      border-color: #dc2626;
+    }
+
+    .recording-status {
+      margin-top: 12px;
+      padding: 12px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 6px;
+    }
+
+    .recording-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-weight: 500;
+      color: #991b1b;
+    }
+
+    .recording-dot {
+      width: 12px;
+      height: 12px;
+      background: #ef4444;
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .recorded-steps {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      padding: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .recorded-steps h5 {
+      margin: 0 0 8px 0;
+      color: #374151;
+      font-size: 13px;
+    }
+
+    .recorded-steps ol {
+      margin: 0;
+      padding-left: 20px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .recorded-steps li {
+      margin-bottom: 4px;
+      color: #6b7280;
+    }
+
+    .step-time {
+      color: #9ca3af;
+      font-size: 11px;
+    }
   </style>
 </head>
 <body>
@@ -533,6 +728,13 @@
   
   <!-- Floating Help Button -->
   <button class="help-button" onclick="showVisualFeedback()" title="Report issue with screenshot, logs & system info">Need Help? 🎯</button>
+  
+  <!-- Floating Stop Recording Button -->
+  <button class="stop-recording-floating" id="stopRecordingFloating" onclick="stopReplication()" style="display: none;" title="Stop step recording and return to feedback form">
+    <span class="recording-pulse"></span>
+    <span class="stop-icon">🔴</span>
+    <span class="stop-text">Stop Recording</span>
+  </button>
   
   <!-- Visual Feedback Modal -->
   <div class="visual-feedback-modal" id="visualFeedbackModal">
@@ -603,6 +805,35 @@
               </div>
             </div>
             
+            <div class="replication-controls" id="replicationControls">
+              <div class="replication-header">
+                <h4 style="margin: 0 0 8px 0; font-size: 16px;">🎬 Step Replication</h4>
+                <small style="color: #6b7280;">Record your steps to help reproduce the issue</small>
+              </div>
+              
+              <div class="replication-buttons">
+                <button class="replication-btn start-recording" id="startRecordingBtn" onclick="startReplication()">
+                  <span class="btn-icon">🎥</span>
+                  Start Recording Steps
+                </button>
+                <button class="replication-btn stop-recording" id="stopRecordingBtn" onclick="stopReplication()" style="display: none;">
+                  <span class="btn-icon">⏹️</span>
+                  Stop Recording
+                </button>
+              </div>
+              
+              <div class="recording-status" id="recordingStatus" style="display: none;">
+                <div class="recording-indicator">
+                  <span class="recording-dot"></span>
+                  <span>Recording in progress...</span>
+                </div>
+                <div class="recorded-steps" id="recordedSteps">
+                  <h5>Recorded Steps:</h5>
+                  <ol id="stepsList"></ol>
+                </div>
+              </div>
+            </div>
+            
             <div class="chat-input-container">
               <textarea id="chatInput" placeholder="Describe the issue you're experiencing..." rows="3"></textarea>
               <button class="send-btn" onclick="sendMessage()">Send</button>
@@ -627,6 +858,14 @@
      let systemInfo = null;
      let capturedLogs = [];
      let networkLogs = [];
+     
+     // Replication recording variables
+     let mediaRecorder = null;
+     let recordedChunks = [];
+     let replicationSteps = [];
+     let isRecording = false;
+     let recordingStartTime = null;
+     let stepListeners = [];
 
      // Capture console logs from page load
      (function setupConsoleCapture() {
@@ -700,6 +939,238 @@
          captureLog('error', [`Unhandled Promise Rejection: ${event.reason}`]);
        });
      })();
+
+     // Replication Recording Functions
+     async function startReplication() {
+       try {
+         // Request screen capture permission
+         const stream = await navigator.mediaDevices.getDisplayMedia({
+           video: {
+             mediaSource: 'screen',
+             width: { ideal: 1920 },
+             height: { ideal: 1080 }
+           },
+           audio: false
+         });
+
+         // Set up MediaRecorder
+         mediaRecorder = new MediaRecorder(stream, {
+           mimeType: 'video/webm;codecs=vp9'
+         });
+
+         recordedChunks = [];
+         replicationSteps = [];
+         recordingStartTime = Date.now();
+         isRecording = true;
+
+         // Handle recorded data
+         mediaRecorder.addEventListener('dataavailable', event => {
+           if (event.data.size > 0) {
+             recordedChunks.push(event.data);
+           }
+         });
+
+         // Handle recording stop
+         mediaRecorder.addEventListener('stop', () => {
+           const blob = new Blob(recordedChunks, { type: 'video/webm' });
+           const videoUrl = URL.createObjectURL(blob);
+           
+           // Add video to replication data
+           systemInfo.replicationData = {
+             videoUrl: videoUrl,
+             videoBlob: blob,
+             steps: replicationSteps,
+             duration: Date.now() - recordingStartTime
+           };
+
+           console.log('Screen recording completed:', {
+             duration: systemInfo.replicationData.duration,
+             steps: replicationSteps.length,
+             videoSize: blob.size
+           });
+         });
+
+         // Start recording
+         mediaRecorder.start();
+
+         // Set up interaction tracking
+         setupInteractionTracking();
+
+         // Update UI - hide modal and show floating stop button
+         document.getElementById('startRecordingBtn').style.display = 'none';
+         document.getElementById('stopRecordingBtn').style.display = 'inline-flex';
+         document.getElementById('recordingStatus').style.display = 'block';
+         
+         // Hide the modal and show floating stop button
+         document.getElementById('visualFeedbackModal').style.display = 'none';
+         document.getElementById('stopRecordingFloating').style.display = 'flex';
+
+         // Add initial step
+         addReplicationStep('🎬 Started recording user interactions');
+         
+         // Add instructions to chat
+         addChatMessage('ai', `🎬 **Recording Started!**
+
+The modal has been minimized so you can interact with the page. 
+
+📹 **Screen recording is active**
+📝 **All your interactions are being tracked**
+🔴 **Look for the red "Stop Recording" button** at the bottom-right
+
+**Go ahead and reproduce the issue** - click, scroll, type, or do whatever causes the problem. When you're done, click the floating "Stop Recording" button to return to this feedback form.`);
+
+         // Handle stream end (user stops sharing)
+         stream.getVideoTracks()[0].addEventListener('ended', () => {
+           if (isRecording) {
+             stopReplication();
+           }
+         });
+
+       } catch (error) {
+         console.error('Error starting screen recording:', error);
+         alert('Unable to start screen recording. Please ensure you grant permission to capture your screen.');
+       }
+     }
+
+     function stopReplication() {
+       if (!isRecording) return;
+
+       isRecording = false;
+
+       // Stop media recorder
+       if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+         mediaRecorder.stop();
+       }
+
+       // Remove interaction listeners
+       removeInteractionTracking();
+
+               // Update UI - show modal again and hide floating button
+        document.getElementById('startRecordingBtn').style.display = 'inline-flex';
+        document.getElementById('stopRecordingBtn').style.display = 'none';
+        document.getElementById('recordingStatus').style.display = 'none';
+        document.getElementById('stopRecordingFloating').style.display = 'none';
+        document.getElementById('visualFeedbackModal').style.display = 'flex';
+
+        // Add final step
+        addReplicationStep('⏹️ Stopped recording');
+
+        // Show completion message
+        const duration = Math.round((Date.now() - recordingStartTime) / 1000);
+        addChatMessage('ai', `✅ **Recording Complete!**
+
+📹 **Screen Recording:** ${duration}s video captured
+📝 **Steps Recorded:** ${replicationSteps.length} interactions tracked
+🎯 **Ready for Submission:** Your replication data is now included with the feedback
+
+The recording and step-by-step interactions will be sent along with your feedback to help developers reproduce the issue exactly as you experienced it.`);
+     }
+
+     function setupInteractionTracking() {
+       // Track clicks on the main page
+       const clickListener = (e) => {
+         if (e.target.closest('.visual-feedback-modal')) return; // Ignore clicks in modal
+         
+         const element = e.target;
+         const rect = element.getBoundingClientRect();
+         const selector = generateSelector(element);
+         
+         addReplicationStep(`🖱️ Clicked: ${selector} at (${Math.round(rect.left + rect.width/2)}, ${Math.round(rect.top + rect.height/2)})`);
+       };
+
+       // Track scrolling
+       const scrollListener = debounce(() => {
+         addReplicationStep(`📜 Scrolled to: (${window.scrollX}, ${window.scrollY})`);
+       }, 500);
+
+       // Track key presses
+       const keyListener = (e) => {
+         if (e.target.closest('.visual-feedback-modal')) return; // Ignore keys in modal
+         
+         const key = e.key;
+         const element = e.target;
+         const selector = generateSelector(element);
+         
+         if (key.length === 1) {
+           addReplicationStep(`⌨️ Typed '${key}' in: ${selector}`);
+         } else if (['Enter', 'Tab', 'Escape', 'Backspace', 'Delete'].includes(key)) {
+           addReplicationStep(`⌨️ Pressed ${key} in: ${selector}`);
+         }
+       };
+
+       // Track form interactions
+       const changeListener = (e) => {
+         if (e.target.closest('.visual-feedback-modal')) return; // Ignore changes in modal
+         
+         const element = e.target;
+         const selector = generateSelector(element);
+         const value = element.value;
+         
+         addReplicationStep(`📝 Changed ${selector} to: "${value.substring(0, 50)}${value.length > 50 ? '...' : ''}"`);
+       };
+
+       // Add listeners to document
+       document.addEventListener('click', clickListener, true);
+       document.addEventListener('scroll', scrollListener, true);
+       document.addEventListener('keydown', keyListener, true);
+       document.addEventListener('change', changeListener, true);
+
+       // Store listeners for cleanup
+       stepListeners = [
+         { type: 'click', listener: clickListener },
+         { type: 'scroll', listener: scrollListener },
+         { type: 'keydown', listener: keyListener },
+         { type: 'change', listener: changeListener }
+       ];
+     }
+
+     function removeInteractionTracking() {
+       stepListeners.forEach(({ type, listener }) => {
+         document.removeEventListener(type, listener, true);
+       });
+       stepListeners = [];
+     }
+
+     function addReplicationStep(description) {
+       const timestamp = Date.now();
+       const relativeTime = recordingStartTime ? Math.round((timestamp - recordingStartTime) / 1000) : 0;
+       
+       const step = {
+         description,
+         timestamp,
+         relativeTime
+       };
+       
+       replicationSteps.push(step);
+       
+       // Update UI
+       const stepsList = document.getElementById('stepsList');
+       const li = document.createElement('li');
+       li.innerHTML = `${description} <span class="step-time">(${relativeTime}s)</span>`;
+       stepsList.appendChild(li);
+       
+       // Scroll to bottom
+       const recordedSteps = document.getElementById('recordedSteps');
+       recordedSteps.scrollTop = recordedSteps.scrollHeight;
+     }
+
+     function generateSelector(element) {
+       if (element.id) return `#${element.id}`;
+       if (element.className) return `.${element.className.split(' ')[0]}`;
+       return element.tagName.toLowerCase();
+     }
+
+     function debounce(func, wait) {
+       let timeout;
+       return function executedFunction(...args) {
+         const later = () => {
+           clearTimeout(timeout);
+           func(...args);
+         };
+         clearTimeout(timeout);
+         timeout = setTimeout(later, wait);
+       };
+     }
 
      // Capture network requests
      (function setupNetworkCapture() {
@@ -1572,6 +2043,7 @@ ${networkLogsHtml}
           annotations: annotations,
           chatMessages: chatMessages.filter(m => m.type === 'user'),
           screenshot: canvas ? canvas.toDataURL('image/png') : null,
+          replicationData: systemInfo?.replicationData || null,
           submittedAt: new Date().toISOString()
         };
 
@@ -1584,6 +2056,10 @@ ${networkLogsHtml}
         //   headers: { 'Content-Type': 'application/json' },
         //   body: JSON.stringify(feedbackData)
         // });
+
+        const replicationInfo = systemInfo?.replicationData ? `
+• 🎬 Screen Recording: ${Math.round(systemInfo.replicationData.duration / 1000)}s video (${Math.round(systemInfo.replicationData.videoBlob.size / 1024)}KB)
+• 📝 Replication Steps: ${systemInfo.replicationData.steps.length} interactions tracked` : '';
 
         alert(`Feedback submitted successfully! 
 
@@ -1600,7 +2076,7 @@ ${systemInfo.touchSupported ? '• 👆 Touch device detected\n' : ''}
 • ✏️ Annotations: ${annotations.length} drawings
 • 💬 Messages: ${chatMessages.filter(m => m.type === 'user').length} user messages
 • 🖥️ Console Logs: ${systemInfo.consoleLogs ? systemInfo.consoleLogs.length : 0} entries
-• 🌐 Network Logs: ${systemInfo.networkLogs ? systemInfo.networkLogs.length : 0} requests (with headers, body & curl commands)
+• 🌐 Network Logs: ${systemInfo.networkLogs ? systemInfo.networkLogs.length : 0} requests (with headers, body & curl commands)${replicationInfo}
 
 Thank you for your detailed feedback!`);
         
@@ -1619,6 +2095,11 @@ Thank you for your detailed feedback!`);
      }
      
           function hideVisualFeedback() {
+       // Stop any active recording
+       if (isRecording) {
+         stopReplication();
+       }
+       
        document.getElementById('visualFeedbackModal').style.display = 'none';
        
        // Clear chat input
@@ -1630,6 +2111,15 @@ Thank you for your detailed feedback!`);
        isDrawing = false;
        originalImageData = null;
        systemInfo = null;
+       
+               // Reset replication state
+        replicationSteps = [];
+        recordedChunks = [];
+        document.getElementById('stepsList').innerHTML = '';
+        document.getElementById('startRecordingBtn').style.display = 'inline-flex';
+        document.getElementById('stopRecordingBtn').style.display = 'none';
+        document.getElementById('recordingStatus').style.display = 'none';
+        document.getElementById('stopRecordingFloating').style.display = 'none';
      }
     
     function sendMessage() {

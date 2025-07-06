@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDN Test - Visual Feedback Widget</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            margin-bottom: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { border-left: 4px solid #4CAF50; }
+        .error { border-left: 4px solid #f44336; }
+        .info { border-left: 4px solid #2196F3; }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .test-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        #log {
+            background: rgba(0, 0, 0, 0.3);
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+    </style>
+    <!-- Load the CDN files (DEVELOPMENT VERSION) -->
+    <link rel="stylesheet" href="/dist/visual-feedback-widget.css">
+    <script src="/dist/visual-feedback-widget.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 CDN Test - Visual Feedback Widget</h1>
+        
+        <div class="status info">
+            <strong>📦 CDN Files:</strong><br>
+            ✅ CSS: /dist/visual-feedback-widget.css (163 KB) - <strong>DEVELOPMENT BUILD</strong><br>
+            ✅ JS: /dist/visual-feedback-widget.js (509 KB) - <strong>DEVELOPMENT BUILD WITH DEBUG</strong>
+        </div>
+        
+        <div class="status" id="widget-status">
+            <strong>🔧 Widget Status:</strong> <span id="status-text">Checking...</span>
+        </div>
+        
+        <div class="status success">
+            <strong>🔧 Available Methods:</strong><br>
+            ✅ widget.show() / widget.open() - Show modal<br>
+            ✅ widget.hide() / widget.close() - Hide modal<br>
+            ✅ widget.captureScreenshot() - Take screenshot<br>
+            ✅ widget.startRecording() - Start recording<br>
+            ✅ widget.getSystemInfo() - Get system info<br>
+            ✅ widget.toggle() - Toggle visibility<br>
+            ✅ widget.isOpen() - Check if open
+        </div>
+        
+        <div class="test-buttons">
+            <button onclick="initializeWidget()">🚀 Initialize Widget</button>
+            <button onclick="showWidget()">📸 Show Widget</button>
+            <button onclick="testScreenshot()">🖼️ Test Screenshot</button>
+            <button onclick="testRecording()">🎥 Test Recording</button>
+            <button onclick="testSystemInfo()">💻 Test System Info</button>
+            <button onclick="clearLog()">🗑️ Clear Log</button>
+        </div>
+        
+        <div id="log"></div>
+    </div>
+
+    <script>
+        let widget = null;
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('widget-status');
+            const statusText = document.getElementById('status-text');
+            statusText.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        // Check if widget is available
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof VisualFeedbackWidget !== 'undefined') {
+                updateStatus('Widget loaded successfully!', 'success');
+                log('✅ VisualFeedbackWidget is available');
+                log('🔧 Widget constructor: ' + typeof VisualFeedbackWidget);
+                
+                // Test basic methods availability
+                const testWidget = new VisualFeedbackWidget();
+                log('📝 Testing method availability...');
+                log('✅ show() method: ' + typeof testWidget.show);
+                log('✅ open() method: ' + typeof testWidget.open);
+                log('✅ hide() method: ' + typeof testWidget.hide);
+                log('✅ close() method: ' + typeof testWidget.close);
+                log('✅ captureScreenshot() method: ' + typeof testWidget.captureScreenshot);
+                log('✅ startRecording() method: ' + typeof testWidget.startRecording);
+                log('✅ getSystemInfo() method: ' + typeof testWidget.getSystemInfo);
+                log('✅ toggle() method: ' + typeof testWidget.toggle);
+                log('✅ isOpen() method: ' + typeof testWidget.isOpen);
+                log('🎉 All methods are available!');
+            } else {
+                updateStatus('Widget failed to load!', 'error');
+                log('❌ VisualFeedbackWidget is not available');
+            }
+        });
+        
+        function initializeWidget() {
+            try {
+                widget = new VisualFeedbackWidget({
+                    position: 'bottom-right',
+                    theme: 'modern',
+                    apiEndpoint: '/api/test-endpoint',
+                    autoInit: true,
+                    debug: true
+                });
+                
+                log('✅ Widget initialized successfully');
+                log('🔧 Widget instance: ' + typeof widget);
+                updateStatus('Widget initialized successfully!', 'success');
+                
+                // Test if widget has modal
+                if (widget.modal) {
+                    log('✅ Modal component created');
+                } else {
+                    log('❌ Modal component not found');
+                }
+                
+                // Test basic functionality
+                log('✅ Ready to test widget functionality!');
+                
+            } catch (error) {
+                log('❌ Error initializing widget: ' + error.message);
+                updateStatus('Widget initialization failed!', 'error');
+            }
+        }
+        
+        function showWidget() {
+            if (widget) {
+                widget.show();
+                log('📺 Widget show() called');
+            } else {
+                log('❌ Widget not initialized. Call initializeWidget() first.');
+            }
+        }
+        
+        function testScreenshot() {
+            if (widget) {
+                log('📸 Testing screenshot functionality...');
+                widget.captureScreenshot();
+            } else {
+                log('❌ Widget not initialized. Call initializeWidget() first.');
+            }
+        }
+        
+        function testRecording() {
+            if (widget) {
+                log('🎥 Testing recording functionality...');
+                widget.startRecording();
+            } else {
+                log('❌ Widget not initialized. Call initializeWidget() first.');
+            }
+        }
+        
+        function testSystemInfo() {
+            if (widget) {
+                log('💻 Testing system info capture...');
+                const info = widget.getSystemInfo();
+                log('💻 System info: ' + JSON.stringify(info, null, 2));
+            } else {
+                log('❌ Widget not initialized. Call initializeWidget() first.');
+            }
+        }
+        
+        // Test page content for screenshot
+        document.body.innerHTML += `
+            <div class="container">
+                <h2>📋 Test Content for Screenshots</h2>
+                <p>This is sample content that will appear in screenshots and recordings.</p>
+                <div style="display: flex; gap: 20px; margin: 20px 0;">
+                    <div style="background: rgba(255, 255, 255, 0.2); padding: 20px; border-radius: 10px; flex: 1;">
+                        <h3>📊 Sample Data</h3>
+                        <ul>
+                            <li>Item 1: Test data</li>
+                            <li>Item 2: More test data</li>
+                            <li>Item 3: Even more test data</li>
+                        </ul>
+                    </div>
+                    <div style="background: rgba(255, 255, 255, 0.2); padding: 20px; border-radius: 10px; flex: 1;">
+                        <h3>🎯 Sample Form</h3>
+                        <input type="text" placeholder="Sample input" style="width: 100%; padding: 10px; margin: 5px 0; border: none; border-radius: 5px;">
+                        <textarea placeholder="Sample textarea" style="width: 100%; padding: 10px; margin: 5px 0; border: none; border-radius: 5px; height: 60px;"></textarea>
+                    </div>
+                </div>
+            </div>
+        `;
+    </script>
+</body>
+</html> 
