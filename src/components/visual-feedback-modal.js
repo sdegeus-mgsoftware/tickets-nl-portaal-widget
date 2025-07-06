@@ -200,6 +200,15 @@ export default class VisualFeedbackModal {
     console.log('🔍 [SHOW] Modal element exists:', !!this.modalElement);
     console.log('🔍 [SHOW] Modal element in DOM:', document.contains(this.modalElement));
 
+    // Take screenshot BEFORE showing modal to prevent layout shift
+    console.log('🔧 [SHOW] Taking screenshot before modal display...');
+    try {
+      await this.components.screenshotCapture.takeScreenshot();
+      console.log('🔧 [SHOW] Screenshot captured successfully');
+    } catch (error) {
+      console.error('Error taking screenshot:', error);
+    }
+
     this.isVisible = true;
     
     // Store original body and html styles before any modifications
@@ -303,10 +312,7 @@ export default class VisualFeedbackModal {
     }
 
     try {
-      console.log('🔧 [SHOW] Starting screenshot capture...');
-      // Take screenshot
-      await this.components.screenshotCapture.takeScreenshot();
-      console.log('🔧 [SHOW] Screenshot captured successfully');
+      console.log('🔧 [SHOW] Screenshot already captured, initializing other components...');
       
       // Initialize system info
       const systemInfo = await this.components.systemInfo.gather();

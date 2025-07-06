@@ -204,19 +204,22 @@ export default class ScreenshotCapture {
    */
   async captureScreen(resolve, reject) {
     try {
-      // Hide the modal temporarily for screenshot
+      // Hide the modal temporarily for screenshot (only if it's visible)
       const modal = document.getElementById('visualFeedbackModal');
       const stopButton = document.getElementById('stopRecordingFloating');
       
       // Store the current cssText to restore forced styles properly
       const modalCssText = modal ? modal.style.cssText : '';
       const stopButtonDisplay = stopButton ? stopButton.style.display : 'none';
+      const modalWasVisible = modal && modal.style.display !== 'none';
       
-      if (modal) modal.style.display = 'none';
+      if (modal && modalWasVisible) modal.style.display = 'none';
       if (stopButton) stopButton.style.display = 'none';
       
-      // Wait a moment for elements to hide
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait a moment for elements to hide (only if modal was visible)
+      if (modalWasVisible) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
       
       const canvas = await html2canvas(document.body, {
         useCORS: true,
@@ -227,11 +230,13 @@ export default class ScreenshotCapture {
         scrollY: 0
       });
       
-      // Restore modal with original forced styles to prevent flicker
-      if (modal && modalCssText) {
-        modal.style.cssText = modalCssText;
-      } else if (modal) {
-        modal.style.display = 'flex';
+      // Restore modal with original forced styles to prevent flicker (only if it was visible)
+      if (modal && modalWasVisible) {
+        if (modalCssText) {
+          modal.style.cssText = modalCssText;
+        } else {
+          modal.style.display = 'flex';
+        }
       }
       if (stopButton) stopButton.style.display = stopButtonDisplay;
       

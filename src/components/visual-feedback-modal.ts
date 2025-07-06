@@ -395,10 +395,15 @@ export class VisualFeedbackModal {
   }
 
   public async show(): Promise<void> {
-    // Start taking screenshot
+    // Show modal immediately (but keep it hidden from view)
+    this.element.style.visibility = 'hidden';
+    this.element.style.display = 'flex';
+    
+    // Take screenshot BEFORE showing modal visually
     await this.takeScreenshot();
     
-    // Show modal with animation
+    // Now show modal with animation
+    this.element.style.visibility = 'visible';
     this.element.classList.add('visual-feedback-opening');
     
     setTimeout(() => {

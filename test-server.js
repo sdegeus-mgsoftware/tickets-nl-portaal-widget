@@ -58,6 +58,11 @@ const server = http.createServer((req, res) => {
     filePath = './examples/index.html';
   }
   
+  // Handle cdn-test.html directly from root
+  if (filePath === './cdn-test.html') {
+    filePath = './examples/cdn-test.html';
+  }
+  
   // Check if file exists
   if (!fs.existsSync(filePath)) {
     res.writeHead(404, { 'Content-Type': 'text/plain' });
