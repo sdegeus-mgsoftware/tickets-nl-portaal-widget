@@ -149,9 +149,13 @@ export default class ScreenshotCapture {
    * Setup canvas drawing event listeners
    */
   setupDrawingEvents() {
-    // Mouse events
+    // Initialize drawing performance variables
+    this.drawFrame = null;
+    this.lastDrawEvent = null;
+    
+    // Mouse events with performance optimization
     this.canvas.addEventListener('mousedown', this.startDrawing.bind(this));
-    this.canvas.addEventListener('mousemove', this.draw.bind(this));
+    this.canvas.addEventListener('mousemove', this.throttledDraw.bind(this));
     this.canvas.addEventListener('mouseup', this.stopDrawing.bind(this));
     this.canvas.addEventListener('mouseout', this.stopDrawing.bind(this));
 
@@ -159,6 +163,25 @@ export default class ScreenshotCapture {
     this.canvas.addEventListener('touchstart', this.handleTouch.bind(this));
     this.canvas.addEventListener('touchmove', this.handleTouch.bind(this));
     this.canvas.addEventListener('touchend', this.handleTouch.bind(this));
+  }
+
+  /**
+   * Throttled drawing using requestAnimationFrame for smooth performance
+   */
+  throttledDraw(e) {
+    this.lastDrawEvent = e;
+    
+    if (this.drawFrame) {
+      return; // Already have a frame scheduled
+    }
+    
+    this.drawFrame = requestAnimationFrame(() => {
+      if (this.lastDrawEvent) {
+        this.draw(this.lastDrawEvent);
+        this.lastDrawEvent = null;
+      }
+      this.drawFrame = null;
+    });
   }
 
   /**
@@ -551,8 +574,8 @@ export default class ScreenshotCapture {
     const canvasX = displayX * scaleX;
     const canvasY = displayY * scaleY;
     
-    // Debug coordinate conversion periodically for troubleshooting
-    if (!this.coordsDebugLogged || Math.random() < 0.01) {
+    // Debug coordinate conversion only on first use (remove random logging for performance)
+    if (!this.coordsDebugLogged) {
       console.log('🎯 [COORDS] Canvas coordinate conversion:', {
         canvasSize: { width: this.canvas.width, height: this.canvas.height },
         displaySize: { width: rect.width, height: rect.height },
@@ -574,15 +597,28 @@ export default class ScreenshotCapture {
     const coords = this.getCanvasCoordinates(e);
     this.startX = coords.x;
     this.startY = coords.y;
+    this.lastX = coords.x;
+    this.lastY = coords.y;
     
-    // For pen tool, initialize a path array
+    // Set up drawing style
+    this.ctx.strokeStyle = this.currentColor;
+    this.ctx.lineWidth = 3;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+    
     if (this.currentTool === 'pen') {
+      // For pen tool, initialize a path array and start drawing immediately
       this.currentPath = [{ x: coords.x, y: coords.y }];
+      this.ctx.beginPath();
+      this.ctx.moveTo(coords.x, coords.y);
+    } else {
+      // For shapes, save the current canvas state for preview mode
+      this.tempImageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
     }
   }
 
   /**
-   * Draw on canvas
+   * Draw on canvas - optimized for performance
    */
   draw(e) {
     if (!this.isDrawing) return;
@@ -591,38 +627,40 @@ export default class ScreenshotCapture {
     const currentX = coords.x;
     const currentY = coords.y;
 
-    // Clear canvas and redraw everything
-    this.redrawCanvas();
-
-    // Draw current annotation
-    this.ctx.strokeStyle = this.currentColor;
-    this.ctx.lineWidth = 3;
-    this.ctx.lineCap = 'round';
-    this.ctx.lineJoin = 'round';
-
     if (this.currentTool === 'pen') {
-      // For pen tool, add point to current path and draw smooth curve
+      // For pen tool: draw line segment from last point to current point
+      // This is much faster than redrawing the entire path each time
+      this.ctx.lineTo(currentX, currentY);
+      this.ctx.stroke();
+      this.ctx.beginPath();
+      this.ctx.moveTo(currentX, currentY);
+      
+      // Add point to path array for final storage
       this.currentPath.push({ x: currentX, y: currentY });
       
-      // Draw the complete path as a smooth curve
-      this.ctx.beginPath();
-      this.ctx.moveTo(this.currentPath[0].x, this.currentPath[0].y);
+      // Update last position
+      this.lastX = currentX;
+      this.lastY = currentY;
+    } else {
+      // For shapes (rectangle/arrow): use preview mode with temporary overlay
+      // Restore canvas to state before preview, then draw new preview
+      this.ctx.putImageData(this.tempImageData, 0, 0);
       
-      for (let i = 1; i < this.currentPath.length; i++) {
-        this.ctx.lineTo(this.currentPath[i].x, this.currentPath[i].y);
+      this.ctx.strokeStyle = this.currentColor;
+      this.ctx.lineWidth = 3;
+      this.ctx.lineCap = 'round';
+      this.ctx.lineJoin = 'round';
+      
+      if (this.currentTool === 'rectangle') {
+        this.ctx.strokeRect(
+          this.startX,
+          this.startY,
+          currentX - this.startX,
+          currentY - this.startY
+        );
+      } else if (this.currentTool === 'arrow') {
+        this.drawArrow(this.startX, this.startY, currentX, currentY);
       }
-      this.ctx.stroke();
-    } else if (this.currentTool === 'rectangle') {
-      // Draw rectangle
-      this.ctx.strokeRect(
-        this.startX,
-        this.startY,
-        currentX - this.startX,
-        currentY - this.startY
-      );
-    } else if (this.currentTool === 'arrow') {
-      // Draw arrow
-      this.drawArrow(this.startX, this.startY, currentX, currentY);
     }
   }
 
@@ -646,7 +684,7 @@ export default class ScreenshotCapture {
         timestamp: Date.now()
       };
     } else {
-      // For other tools, save start/end coordinates
+      // For other tools, save start/end coordinates and finalize the shape
       const coords = this.getCanvasCoordinates(e);
       annotation = {
         type: this.currentTool,
@@ -657,12 +695,30 @@ export default class ScreenshotCapture {
         endY: coords.y,
         timestamp: Date.now()
       };
+      
+      // Make sure the final shape is properly drawn (in case of very quick clicks)
+      this.ctx.strokeStyle = this.currentColor;
+      this.ctx.lineWidth = 3;
+      this.ctx.lineCap = 'round';
+      this.ctx.lineJoin = 'round';
+      
+      if (this.currentTool === 'rectangle') {
+        this.ctx.strokeRect(
+          this.startX,
+          this.startY,
+          coords.x - this.startX,
+          coords.y - this.startY
+        );
+      } else if (this.currentTool === 'arrow') {
+        this.drawArrow(this.startX, this.startY, coords.x, coords.y);
+      }
     }
     
     this.annotations.push(annotation);
     
-    // Clear current path
+    // Clear temporary data
     this.currentPath = null;
+    this.tempImageData = null;
     
     // Trigger callback
     if (this.options.onAnnotationChange) {
@@ -818,6 +874,14 @@ export default class ScreenshotCapture {
     this.originalImageData = null;
     this.canvasReady = false;
     
+    // Cancel any pending drawing operations
+    if (this.drawFrame) {
+      cancelAnimationFrame(this.drawFrame);
+      this.drawFrame = null;
+    }
+    this.lastDrawEvent = null;
+    this.isDrawing = false;
+    
     if (this.canvas) {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       // Remove the ready class to hide canvas during reset
@@ -833,6 +897,12 @@ export default class ScreenshotCapture {
     if (this.resizeTimeout) {
       clearTimeout(this.resizeTimeout);
       this.resizeTimeout = null;
+    }
+    
+    // Cancel any pending animation frames
+    if (this.drawFrame) {
+      cancelAnimationFrame(this.drawFrame);
+      this.drawFrame = null;
     }
     
     // Remove event listeners
