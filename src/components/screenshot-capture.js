@@ -543,17 +543,20 @@ export default class ScreenshotCapture {
     const displayX = e.clientX - rect.left;
     const displayY = e.clientY - rect.top;
     
-    // Use the stored display scale to convert coordinates
-    const scale = this.displayScale || 1;
-    const canvasX = displayX / scale;
-    const canvasY = displayY / scale;
+    // Calculate the actual scale ratio between canvas internal size and display size
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
     
-    // Debug coordinate conversion only on first use
-    if (!this.coordsDebugLogged) {
+    // Convert display coordinates to canvas coordinates
+    const canvasX = displayX * scaleX;
+    const canvasY = displayY * scaleY;
+    
+    // Debug coordinate conversion periodically for troubleshooting
+    if (!this.coordsDebugLogged || Math.random() < 0.01) {
       console.log('🎯 [COORDS] Canvas coordinate conversion:', {
-        displayScale: scale,
         canvasSize: { width: this.canvas.width, height: this.canvas.height },
         displaySize: { width: rect.width, height: rect.height },
+        scaleFactors: { x: scaleX, y: scaleY },
         mouseDisplay: { x: displayX, y: displayY },
         mouseCanvas: { x: canvasX, y: canvasY }
       });
