@@ -277,19 +277,51 @@ export default class ScreenshotCapture {
       await new Promise(resolve => setTimeout(resolve, 250));
       console.log(`📸 ${timestamp()} [CAPTURE] Layout stabilized (${Date.now() - stabilizeStart}ms)`);
       
-      console.log(`📸 ${timestamp()} [CAPTURE] Starting html2canvas capture...`);
+      // Get current viewport information
+      const currentScrollX = window.pageXOffset || document.documentElement.scrollLeft;
+      const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      console.log(`📸 ${timestamp()} [CAPTURE] Current viewport info:`, {
+        scrollX: currentScrollX,
+        scrollY: currentScrollY,
+        width: viewportWidth,
+        height: viewportHeight
+      });
+      
+      console.log(`📸 ${timestamp()} [CAPTURE] Starting html2canvas capture of full page for cropping...`);
       const captureStart = Date.now();
-      const canvas = await html2canvas(document.body, {
+      
+      // First capture the full page
+      const fullCanvas = await html2canvas(document.body, {
         useCORS: true,
         scale: 1,
-        width: window.innerWidth,
-        height: window.innerHeight,
-        scrollX: 0,
-        scrollY: 0,
+        allowTaint: true,
         logging: false // Disable html2canvas logging for cleaner output
       });
-      console.log(`📸 ${timestamp()} [CAPTURE] html2canvas capture complete (${Date.now() - captureStart}ms)`);
-      console.log(`📸 ${timestamp()} [CAPTURE] Canvas dimensions: ${canvas.width}×${canvas.height}px`);
+      
+      console.log(`📸 ${timestamp()} [CAPTURE] Full page captured: ${fullCanvas.width}×${fullCanvas.height}px`);
+      
+      // Now crop it to show only the current viewport
+      const croppedCanvas = document.createElement('canvas');
+      croppedCanvas.width = viewportWidth;
+      croppedCanvas.height = viewportHeight;
+      const ctx = croppedCanvas.getContext('2d');
+      
+      // Draw only the viewport area from the full screenshot
+      ctx.drawImage(
+        fullCanvas,
+        currentScrollX, currentScrollY, viewportWidth, viewportHeight, // Source rectangle (current viewport)
+        0, 0, viewportWidth, viewportHeight // Destination rectangle (full cropped canvas)
+      );
+      
+      console.log(`📸 ${timestamp()} [CAPTURE] Viewport cropped from full page (${Date.now() - captureStart}ms)`);
+      console.log(`📸 ${timestamp()} [CAPTURE] Cropped canvas dimensions: ${croppedCanvas.width}×${croppedCanvas.height}px`);
+      console.log(`📸 ${timestamp()} [CAPTURE] Cropped from position: ${currentScrollX},${currentScrollY}`);
+      
+      // Use the cropped canvas instead of the full canvas
+      const canvas = croppedCanvas;
       
       console.log(`📸 ${timestamp()} [CAPTURE] Restoring UI elements...`);
       
@@ -371,17 +403,17 @@ export default class ScreenshotCapture {
       // Dimensions display will be updated in centerCanvas() after scaling is calculated
       console.log(`📸 ${timestamp()} [SETUP] Dimensions display will be updated after scaling...`);
       
-      // Mark canvas as ready and center it immediately (FIRST CENTER - this one is good!)
-      console.log(`📸 ${timestamp()} [SETUP] Canvas setup complete, centering immediately...`);
+      // Mark canvas as ready but DON'T center yet - container doesn't have final dimensions
+      console.log(`📸 ${timestamp()} [SETUP] Canvas setup complete, marking as ready...`);
       this.canvasReady = true;
       
-      // Center the canvas right now during setup - this is the GOOD centering
-      this.centerCanvas();
+      // DON'T center here - container size is not final yet!
+      console.log(`📸 ${timestamp()} [SETUP] Centering will happen later when modal layout is complete`);
       
-      // Make canvas visible now that it's properly positioned
+      // Make canvas visible but without scaling yet
       if (this.canvas) {
         this.canvas.classList.add('canvas-ready');
-        console.log(`📸 ${timestamp()} [SETUP] Canvas centered and made visible`);
+        console.log(`📸 ${timestamp()} [SETUP] Canvas marked as ready (scaling will happen later)`);
       }
       
       console.log(`📸 ${timestamp()} [SETUP] ========== CANVAS SETUP COMPLETE ==========`);

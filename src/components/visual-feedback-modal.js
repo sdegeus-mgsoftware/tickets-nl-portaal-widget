@@ -460,11 +460,21 @@ export default class VisualFeedbackModal {
       
       console.log(`🔧 ${timestamp()} [STEP-7] Modal layout should now be fully visible and stable`);
 
-      // Modal is now working successfully!
-      // Screenshot was already centered during canvas setup - no need for second centering!
-      console.log(`🎯 ${timestamp()} [STEP-8] ========== SKIPPING SECOND CENTER ==========`);
-      console.log(`🎯 ${timestamp()} [STEP-8] Screenshot already centered during canvas setup, no second centering needed`);
-      console.log(`🎯 ${timestamp()} [STEP-8] ========== SECOND CENTER SKIPPED ==========`);
+      // NOW the modal layout is complete - time to scale and center the canvas!
+      console.log(`🎯 ${timestamp()} [STEP-8] ========== CANVAS SCALING & CENTERING ==========`);
+      console.log(`🎯 ${timestamp()} [STEP-8] Modal layout complete, now scaling canvas to fit container...`);
+      
+      // Give the layout a moment to stabilize, then center the canvas
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      if (this.components.screenshotCapture) {
+        this.components.screenshotCapture.centerCanvasWhenReady();
+        console.log(`🎯 ${timestamp()} [STEP-8] Canvas scaling and centering initiated`);
+      } else {
+        console.log(`🎯 ${timestamp()} [STEP-8] Screenshot capture component not available`);
+      }
+      
+      console.log(`🎯 ${timestamp()} [STEP-8] ========== CANVAS SCALING & CENTERING COMPLETE ==========`);
       
       // Trigger callback
       console.log(`🎯 ${timestamp()} [STEP-9] ========== FINAL COMPLETION ==========`);
