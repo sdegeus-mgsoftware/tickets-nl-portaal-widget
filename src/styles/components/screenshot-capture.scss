@@ -86,7 +86,11 @@
   background: #f8f9fa;
   min-height: 0; // Important for flexbox scrolling
   min-width: 0;  // Important for flexbox scrolling
-  padding: 20px; // Add padding for better spacing
+  padding: 10px; // Reduced padding to prevent cutoff
+  
+  // Ensure the container shows scrollbars when needed
+  overflow-x: auto;
+  overflow-y: auto;
   
   // Custom scrollbar styling
   &::-webkit-scrollbar {
@@ -121,6 +125,17 @@
   border: 1px solid #e5e7eb;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border-radius: 8px; // Add rounded corners for better appearance
+  
+  // Let JavaScript handle positioning, don't constraint the canvas size
+  // This ensures the screenshot is shown at full resolution
+  
+  // Start with slight opacity and transition to prevent initial positioning flash
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  
+  &.canvas-ready {
+    opacity: 1;
+  }
   
   &:hover {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);

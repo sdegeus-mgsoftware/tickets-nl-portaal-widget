@@ -185,15 +185,26 @@ export default class ScreenshotCapture {
    * Take a screenshot of the page
    */
   async takeScreenshot() {
+    const timestamp = () => `[${new Date().toLocaleTimeString()}.${Date.now() % 1000}]`;
+    console.log(`📸 ${timestamp()} [SCREENSHOT] ========== SCREENSHOT PROCESS STARTED ==========`);
+    
     return new Promise((resolve, reject) => {
       // Import html2canvas dynamically
       if (typeof html2canvas === 'undefined') {
+        console.log(`📸 ${timestamp()} [SCREENSHOT] html2canvas not loaded, importing from CDN...`);
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-        script.onload = () => this.captureScreen(resolve, reject);
-        script.onerror = () => reject(new Error('Failed to load html2canvas'));
+        script.onload = () => {
+          console.log(`📸 ${timestamp()} [SCREENSHOT] html2canvas loaded successfully, starting capture...`);
+          this.captureScreen(resolve, reject);
+        };
+        script.onerror = () => {
+          console.error(`📸 ${timestamp()} [SCREENSHOT] Failed to load html2canvas from CDN`);
+          reject(new Error('Failed to load html2canvas'));
+        };
         document.head.appendChild(script);
       } else {
+        console.log(`📸 ${timestamp()} [SCREENSHOT] html2canvas already available, starting capture...`);
         this.captureScreen(resolve, reject);
       }
     });
@@ -203,48 +214,104 @@ export default class ScreenshotCapture {
    * Capture the screen using html2canvas
    */
   async captureScreen(resolve, reject) {
+    const timestamp = () => `[${new Date().toLocaleTimeString()}.${Date.now() % 1000}]`;
+    
     try {
-      // Hide the modal temporarily for screenshot (only if it's visible)
+      console.log(`📸 ${timestamp()} [CAPTURE] ========== SCREEN CAPTURE STARTED ==========`);
+      
+      // Hide any UI elements that shouldn't be in the screenshot
+      console.log(`📸 ${timestamp()} [CAPTURE] Finding UI elements to hide...`);
       const modal = document.getElementById('visualFeedbackModal');
       const stopButton = document.getElementById('stopRecordingFloating');
+      const screenshotLoader = document.getElementById('screenshotLoadingIndicator');
       
-      // Store the current cssText to restore forced styles properly
+      console.log(`📸 ${timestamp()} [CAPTURE] UI elements found:`, {
+        modal: !!modal,
+        stopButton: !!stopButton,
+        screenshotLoader: !!screenshotLoader
+      });
+      
+      // Store the current state to restore later
+      console.log(`📸 ${timestamp()} [CAPTURE] Storing original states...`);
       const modalCssText = modal ? modal.style.cssText : '';
       const stopButtonDisplay = stopButton ? stopButton.style.display : 'none';
+      const loaderDisplay = screenshotLoader ? screenshotLoader.style.display : 'none';
       const modalWasVisible = modal && modal.style.display !== 'none';
       
-      if (modal && modalWasVisible) modal.style.display = 'none';
-      if (stopButton) stopButton.style.display = 'none';
+      console.log(`📸 ${timestamp()} [CAPTURE] Original states:`, {
+        modalWasVisible,
+        stopButtonDisplay,
+        loaderDisplay
+      });
       
-      // Wait a moment for elements to hide (only if modal was visible)
-      if (modalWasVisible) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+      // Hide elements
+      console.log(`📸 ${timestamp()} [CAPTURE] Hiding UI elements...`);
+      if (modal && modalWasVisible) {
+        modal.style.display = 'none';
+        console.log(`📸 ${timestamp()} [CAPTURE] Modal hidden`);
+      }
+      if (stopButton) {
+        stopButton.style.display = 'none';
+        console.log(`📸 ${timestamp()} [CAPTURE] Stop button hidden`);
+      }
+      if (screenshotLoader) {
+        screenshotLoader.style.display = 'none';
+        console.log(`📸 ${timestamp()} [CAPTURE] Screenshot loader hidden`);
       }
       
+      // Wait longer for everything to settle and any animations to complete
+      console.log(`📸 ${timestamp()} [CAPTURE] Waiting 250ms for layout to stabilize...`);
+      const stabilizeStart = Date.now();
+      await new Promise(resolve => setTimeout(resolve, 250));
+      console.log(`📸 ${timestamp()} [CAPTURE] Layout stabilized (${Date.now() - stabilizeStart}ms)`);
+      
+      console.log(`📸 ${timestamp()} [CAPTURE] Starting html2canvas capture...`);
+      const captureStart = Date.now();
       const canvas = await html2canvas(document.body, {
         useCORS: true,
         scale: 1,
         width: window.innerWidth,
         height: window.innerHeight,
         scrollX: 0,
-        scrollY: 0
+        scrollY: 0,
+        logging: false // Disable html2canvas logging for cleaner output
       });
+      console.log(`📸 ${timestamp()} [CAPTURE] html2canvas capture complete (${Date.now() - captureStart}ms)`);
+      console.log(`📸 ${timestamp()} [CAPTURE] Canvas dimensions: ${canvas.width}×${canvas.height}px`);
       
-      // Restore modal with original forced styles to prevent flicker (only if it was visible)
+      console.log(`📸 ${timestamp()} [CAPTURE] Restoring UI elements...`);
+      
+      // Restore all hidden elements
       if (modal && modalWasVisible) {
         if (modalCssText) {
           modal.style.cssText = modalCssText;
         } else {
           modal.style.display = 'flex';
         }
+        console.log(`📸 ${timestamp()} [CAPTURE] Modal restored`);
       }
-      if (stopButton) stopButton.style.display = stopButtonDisplay;
+      if (stopButton) {
+        stopButton.style.display = stopButtonDisplay;
+        console.log(`📸 ${timestamp()} [CAPTURE] Stop button restored`);
+      }
+      if (screenshotLoader) {
+        screenshotLoader.style.display = loaderDisplay;
+        console.log(`📸 ${timestamp()} [CAPTURE] Screenshot loader restored`);
+      }
       
+      console.log(`📸 ${timestamp()} [CAPTURE] Converting to PNG data URL...`);
+      const pngStart = Date.now();
       this.originalScreenshot = canvas.toDataURL('image/png');
+      console.log(`📸 ${timestamp()} [CAPTURE] PNG conversion complete (${Date.now() - pngStart}ms)`);
+      console.log(`📸 ${timestamp()} [CAPTURE] Data URL length: ${this.originalScreenshot.length} chars`);
+      
+      console.log(`📸 ${timestamp()} [CAPTURE] Setting up canvas...`);
       this.setupCanvas(canvas);
       
+      console.log(`📸 ${timestamp()} [CAPTURE] ========== SCREEN CAPTURE COMPLETE ==========`);
       resolve();
     } catch (error) {
+      console.error(`📸 ${timestamp()} [CAPTURE] ❌ Error during screen capture:`, error);
       reject(error);
     }
   }
@@ -253,91 +320,222 @@ export default class ScreenshotCapture {
    * Setup the canvas with the screenshot
    */
   setupCanvas(screenshotCanvas) {
+    const timestamp = () => `[${new Date().toLocaleTimeString()}.${Date.now() % 1000}]`;
+    console.log(`📸 ${timestamp()} [SETUP] ========== CANVAS SETUP STARTED ==========`);
+    
     const img = new Image();
     img.onload = () => {
+      console.log(`📸 ${timestamp()} [SETUP] Image loaded for canvas setup`);
+      console.log(`📸 ${timestamp()} [SETUP] Image natural dimensions: ${img.naturalWidth}×${img.naturalHeight}px`);
+      
       // Set canvas size to match screenshot
+      console.log(`📸 ${timestamp()} [SETUP] Setting canvas dimensions...`);
       this.canvas.width = img.width;
       this.canvas.height = img.height;
+      console.log(`📸 ${timestamp()} [SETUP] Canvas size set to: ${this.canvas.width}×${this.canvas.height}px`);
       
       // Draw the screenshot
+      console.log(`📸 ${timestamp()} [SETUP] Drawing image to canvas...`);
+      const drawStart = Date.now();
       this.ctx.drawImage(img, 0, 0);
+      console.log(`📸 ${timestamp()} [SETUP] Image drawn to canvas (${Date.now() - drawStart}ms)`);
       
       // Store original image data
+      console.log(`📸 ${timestamp()} [SETUP] Storing original image data...`);
+      const imageDataStart = Date.now();
       this.originalImageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+      console.log(`📸 ${timestamp()} [SETUP] Original image data stored (${Date.now() - imageDataStart}ms)`);
       
       // Update dimensions display
+      console.log(`📸 ${timestamp()} [SETUP] Updating dimensions display...`);
       const dimensionsDisplay = this.options.container.querySelector('#dimensionsDisplay');
       if (dimensionsDisplay) {
         dimensionsDisplay.textContent = `${img.width}×${img.height}px`;
+        console.log(`📸 ${timestamp()} [SETUP] Dimensions display updated`);
+      } else {
+        console.log(`📸 ${timestamp()} [SETUP] Dimensions display element not found`);
       }
       
-      // Center the canvas within the scrollable container
-      // Use multiple timeouts to ensure it works even with slow loading
+      // Mark canvas as ready and center it immediately (FIRST CENTER - this one is good!)
+      console.log(`📸 ${timestamp()} [SETUP] Canvas setup complete, centering immediately...`);
+      this.canvasReady = true;
+      
+      // Center the canvas right now during setup - this is the GOOD centering
       this.centerCanvas();
-      setTimeout(() => this.centerCanvas(), 250);
-      setTimeout(() => this.centerCanvas(), 500);
+      
+      // Make canvas visible now that it's properly positioned
+      if (this.canvas) {
+        this.canvas.classList.add('canvas-ready');
+        console.log(`📸 ${timestamp()} [SETUP] Canvas centered and made visible`);
+      }
+      
+      console.log(`📸 ${timestamp()} [SETUP] ========== CANVAS SETUP COMPLETE ==========`);
     };
+    
+    console.log(`📸 ${timestamp()} [SETUP] Starting image load from data URL...`);
     img.src = this.originalScreenshot;
+  }
+
+  /**
+   * Center the canvas when modal layout is stable (called externally)
+   */
+  centerCanvasWhenReady() {
+    const timestamp = () => `[${new Date().toLocaleTimeString()}.${Date.now() % 1000}]`;
+    console.log(`🎯 ${timestamp()} [CENTER] ========== CENTERING WHEN READY ==========`);
+    
+    if (!this.canvasReady) {
+      console.log(`🎯 ${timestamp()} [CENTER] Canvas not ready yet, skipping centering`);
+      return;
+    }
+    
+    console.log(`🎯 ${timestamp()} [CENTER] Canvas is ready, modal layout stable, centering now...`);
+    this.centerCanvas();
+    
+    // Make canvas visible now that it's properly positioned
+    console.log(`🎯 ${timestamp()} [CENTER] Making canvas visible after proper positioning...`);
+    if (this.canvas) {
+      this.canvas.classList.add('canvas-ready');
+      console.log(`🎯 ${timestamp()} [CENTER] Canvas marked as ready and visible`);
+    }
+    
+    console.log(`🎯 ${timestamp()} [CENTER] ========== CENTERING WHEN READY COMPLETE ==========`);
   }
 
   /**
    * Center the canvas within its scrollable container
    */
   centerCanvas() {
+    const timestamp = () => `[${new Date().toLocaleTimeString()}.${Date.now() % 1000}]`;
+    console.log(`🎯 ${timestamp()} [CENTER] ========== CANVAS CENTERING STARTED ==========`);
+    
     const container = this.options.container.querySelector('.screenshot-container');
     if (!container || !this.canvas) {
-      console.log('🎯 [CENTER] Missing container or canvas:', { container: !!container, canvas: !!this.canvas });
+      console.log(`🎯 ${timestamp()} [CENTER] Missing required elements:`, { 
+        container: !!container, 
+        canvas: !!this.canvas 
+      });
       return;
     }
     
-    // Use multiple attempts with increasing delays to ensure layout is complete
-    const attemptCentering = (attempt = 1) => {
-      console.log(`🎯 [CENTER] Attempting to center (attempt ${attempt})`);
-      
-      // Get container dimensions
-      const containerRect = container.getBoundingClientRect();
-      const containerStyle = window.getComputedStyle(container);
-      const containerPadding = parseInt(containerStyle.padding) || 20;
-      
-      // Calculate actual scrollable dimensions
-      const scrollableWidth = containerRect.width - (containerPadding * 2);
-      const scrollableHeight = containerRect.height - (containerPadding * 2);
-      
-      // Get canvas dimensions
-      const canvasWidth = this.canvas.width;
-      const canvasHeight = this.canvas.height;
-      
-      // Calculate center position
-      const centerX = Math.max(0, (canvasWidth - scrollableWidth) / 2);
-      const centerY = Math.max(0, (canvasHeight - scrollableHeight) / 2);
-      
-      // Set scroll position
-      container.scrollLeft = centerX;
-      container.scrollTop = centerY;
-      
-      const actualScrollX = container.scrollLeft;
-      const actualScrollY = container.scrollTop;
-      
-      console.log('🎯 [CENTER] Centering details:', {
-        attempt,
-        canvasSize: { width: canvasWidth, height: canvasHeight },
-        containerRect: { width: containerRect.width, height: containerRect.height },
-        scrollableSize: { width: scrollableWidth, height: scrollableHeight },
-        targetScroll: { x: centerX, y: centerY },
-        actualScroll: { x: actualScrollX, y: actualScrollY },
-        isScrollable: container.scrollWidth > container.clientWidth || container.scrollHeight > container.clientHeight
-      });
-      
-      // If scrolling didn't work as expected and we have more attempts, try again
-      if ((actualScrollX !== centerX || actualScrollY !== centerY) && attempt < 3) {
-        setTimeout(() => attemptCentering(attempt + 1), 200 * attempt);
-      } else {
-        console.log('🎯 [CENTER] Centering complete');
-      }
-    };
+    console.log(`🎯 ${timestamp()} [CENTER] Container and canvas found, proceeding with centering...`);
     
-    // Start first attempt after a short delay
-    setTimeout(() => attemptCentering(1), 100);
+    // Get container dimensions
+    console.log(`🎯 ${timestamp()} [CENTER] Getting container dimensions...`);
+    const containerRect = container.getBoundingClientRect();
+    const containerStyle = window.getComputedStyle(container);
+    
+    console.log(`🎯 ${timestamp()} [CENTER] Container rect:`, {
+      x: containerRect.x,
+      y: containerRect.y,
+      width: containerRect.width,
+      height: containerRect.height
+    });
+    
+    // Get actual padding values (handle shorthand padding)
+    console.log(`🎯 ${timestamp()} [CENTER] Calculating padding values...`);
+    const paddingTop = parseInt(containerStyle.paddingTop) || 0;
+    const paddingRight = parseInt(containerStyle.paddingRight) || 0;
+    const paddingBottom = parseInt(containerStyle.paddingBottom) || 0;
+    const paddingLeft = parseInt(containerStyle.paddingLeft) || 0;
+    
+    console.log(`🎯 ${timestamp()} [CENTER] Container padding:`, {
+      top: paddingTop,
+      right: paddingRight,
+      bottom: paddingBottom,
+      left: paddingLeft
+    });
+    
+    // Calculate actual scrollable dimensions
+    console.log(`🎯 ${timestamp()} [CENTER] Calculating scrollable dimensions...`);
+    const scrollableWidth = container.clientWidth - paddingLeft - paddingRight;
+    const scrollableHeight = container.clientHeight - paddingTop - paddingBottom;
+    
+    console.log(`🎯 ${timestamp()} [CENTER] Scrollable area:`, {
+      width: scrollableWidth,
+      height: scrollableHeight,
+      clientWidth: container.clientWidth,
+      clientHeight: container.clientHeight
+    });
+    
+    // Get canvas dimensions
+    const canvasWidth = this.canvas.width;
+    const canvasHeight = this.canvas.height;
+    
+    console.log(`🎯 ${timestamp()} [CENTER] Canvas dimensions:`, {
+      width: canvasWidth,
+      height: canvasHeight
+    });
+    
+    // Calculate center position - ensure we don't scroll to negative values
+    console.log(`🎯 ${timestamp()} [CENTER] Calculating center positions...`);
+    const centerX = Math.max(0, (canvasWidth - scrollableWidth) / 2);
+    const centerY = Math.max(0, (canvasHeight - scrollableHeight) / 2);
+    
+    console.log(`🎯 ${timestamp()} [CENTER] Target center positions:`, {
+      x: centerX,
+      y: centerY
+    });
+    
+    // Only scroll if the canvas is larger than the container
+    console.log(`🎯 ${timestamp()} [CENTER] Applying scroll positions...`);
+    if (canvasWidth > scrollableWidth) {
+      console.log(`🎯 ${timestamp()} [CENTER] Canvas wider than container, scrolling horizontally to ${centerX}`);
+      container.scrollLeft = centerX;
+    } else {
+      console.log(`🎯 ${timestamp()} [CENTER] Canvas fits horizontally, resetting scroll to 0`);
+      container.scrollLeft = 0; // Reset to left if canvas fits
+    }
+    
+    if (canvasHeight > scrollableHeight) {
+      console.log(`🎯 ${timestamp()} [CENTER] Canvas taller than container, scrolling vertically to ${centerY}`);
+      container.scrollTop = centerY;
+    } else {
+      console.log(`🎯 ${timestamp()} [CENTER] Canvas fits vertically, resetting scroll to 0`);
+      container.scrollTop = 0; // Reset to top if canvas fits
+    }
+    
+    const actualScrollX = container.scrollLeft;
+    const actualScrollY = container.scrollTop;
+    
+    console.log(`🎯 ${timestamp()} [CENTER] Final scroll positions:`, {
+      target: { x: centerX, y: centerY },
+      actual: { x: actualScrollX, y: actualScrollY },
+      canvasSize: { width: canvasWidth, height: canvasHeight },
+      containerSize: { width: scrollableWidth, height: scrollableHeight }
+    });
+    
+    console.log(`🎯 ${timestamp()} [CENTER] ========== CANVAS CENTERING COMPLETE ==========`);
+  }
+
+  /**
+   * Convert screen coordinates to canvas coordinates accounting for scaling
+   */
+  getCanvasCoordinates(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    
+    // Get the mouse position relative to the canvas display area
+    const displayX = e.clientX - rect.left;
+    const displayY = e.clientY - rect.top;
+    
+    // Calculate scale factors between displayed size and actual canvas size
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    
+    // Convert to canvas coordinates
+    const canvasX = displayX * scaleX;
+    const canvasY = displayY * scaleY;
+    
+    // Debug coordinate conversion only on first use
+    if (!this.coordsDebugLogged) {
+      console.log('🎯 [COORDS] Canvas scaling factors:', {
+        canvasSize: { width: this.canvas.width, height: this.canvas.height },
+        displaySize: { width: rect.width, height: rect.height },
+        scale: { x: scaleX, y: scaleY }
+      });
+      this.coordsDebugLogged = true;
+    }
+    
+    return { x: canvasX, y: canvasY };
   }
 
   /**
@@ -345,9 +543,9 @@ export default class ScreenshotCapture {
    */
   startDrawing(e) {
     this.isDrawing = true;
-    const rect = this.canvas.getBoundingClientRect();
-    this.startX = e.clientX - rect.left;
-    this.startY = e.clientY - rect.top;
+    const coords = this.getCanvasCoordinates(e);
+    this.startX = coords.x;
+    this.startY = coords.y;
   }
 
   /**
@@ -356,9 +554,9 @@ export default class ScreenshotCapture {
   draw(e) {
     if (!this.isDrawing) return;
 
-    const rect = this.canvas.getBoundingClientRect();
-    const currentX = e.clientX - rect.left;
-    const currentY = e.clientY - rect.top;
+    const coords = this.getCanvasCoordinates(e);
+    const currentX = coords.x;
+    const currentY = coords.y;
 
     // Clear canvas and redraw everything
     this.redrawCanvas();
@@ -400,9 +598,9 @@ export default class ScreenshotCapture {
     
     this.isDrawing = false;
     
-    const rect = this.canvas.getBoundingClientRect();
-    const endX = e.clientX - rect.left;
-    const endY = e.clientY - rect.top;
+    const coords = this.getCanvasCoordinates(e);
+    const endX = coords.x;
+    const endY = coords.y;
     
     // Save annotation
     const annotation = {
@@ -556,9 +754,12 @@ export default class ScreenshotCapture {
     this.annotations = [];
     this.originalScreenshot = '';
     this.originalImageData = null;
+    this.canvasReady = false;
     
     if (this.canvas) {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      // Remove the ready class to hide canvas during reset
+      this.canvas.classList.remove('canvas-ready');
     }
   }
 
