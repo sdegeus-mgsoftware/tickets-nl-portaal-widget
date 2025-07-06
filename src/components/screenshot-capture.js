@@ -15,13 +15,17 @@ export default class ScreenshotCapture {
     this.ctx = null;
     this.originalScreenshot = '';
     this.annotations = [];
-    this.currentTool = 'rectangle';
+    this.currentTool = 'pen';
     this.currentColor = '#ef4444';
     this.isDrawing = false;
     this.startX = 0;
     this.startY = 0;
+    this.currentPath = null; // For storing pen tool path points
     this.originalImageData = null;
     this.resizeTimeout = null;
+    this.displayScale = 1; // Scale factor for canvas display vs internal resolution
+    this.originalCanvasWidth = 0; // Original canvas width for scaling calculations
+    this.originalCanvasHeight = 0; // Original canvas height for scaling calculations
 
     this.init();
   }
@@ -224,11 +228,13 @@ export default class ScreenshotCapture {
       const modal = document.getElementById('visualFeedbackModal');
       const stopButton = document.getElementById('stopRecordingFloating');
       const screenshotLoader = document.getElementById('screenshotLoadingIndicator');
+      const helpButton = document.querySelector('.help-button');
       
       console.log(`📸 ${timestamp()} [CAPTURE] UI elements found:`, {
         modal: !!modal,
         stopButton: !!stopButton,
-        screenshotLoader: !!screenshotLoader
+        screenshotLoader: !!screenshotLoader,
+        helpButton: !!helpButton
       });
       
       // Store the current state to restore later
@@ -236,12 +242,14 @@ export default class ScreenshotCapture {
       const modalCssText = modal ? modal.style.cssText : '';
       const stopButtonDisplay = stopButton ? stopButton.style.display : 'none';
       const loaderDisplay = screenshotLoader ? screenshotLoader.style.display : 'none';
+      const helpButtonDisplay = helpButton ? helpButton.style.display : '';
       const modalWasVisible = modal && modal.style.display !== 'none';
       
       console.log(`📸 ${timestamp()} [CAPTURE] Original states:`, {
         modalWasVisible,
         stopButtonDisplay,
-        loaderDisplay
+        loaderDisplay,
+        helpButtonDisplay
       });
       
       // Hide elements
@@ -257,6 +265,10 @@ export default class ScreenshotCapture {
       if (screenshotLoader) {
         screenshotLoader.style.display = 'none';
         console.log(`📸 ${timestamp()} [CAPTURE] Screenshot loader hidden`);
+      }
+      if (helpButton) {
+        helpButton.style.display = 'none';
+        console.log(`📸 ${timestamp()} [CAPTURE] Help button hidden`);
       }
       
       // Wait longer for everything to settle and any animations to complete
@@ -298,6 +310,10 @@ export default class ScreenshotCapture {
         screenshotLoader.style.display = loaderDisplay;
         console.log(`📸 ${timestamp()} [CAPTURE] Screenshot loader restored`);
       }
+      if (helpButton) {
+        helpButton.style.display = helpButtonDisplay;
+        console.log(`📸 ${timestamp()} [CAPTURE] Help button restored`);
+      }
       
       console.log(`📸 ${timestamp()} [CAPTURE] Converting to PNG data URL...`);
       const pngStart = Date.now();
@@ -328,11 +344,17 @@ export default class ScreenshotCapture {
       console.log(`📸 ${timestamp()} [SETUP] Image loaded for canvas setup`);
       console.log(`📸 ${timestamp()} [SETUP] Image natural dimensions: ${img.naturalWidth}×${img.naturalHeight}px`);
       
-      // Set canvas size to match screenshot
-      console.log(`📸 ${timestamp()} [SETUP] Setting canvas dimensions...`);
+      // Set canvas internal size to match screenshot (for high quality)
+      console.log(`📸 ${timestamp()} [SETUP] Setting canvas internal dimensions...`);
       this.canvas.width = img.width;
       this.canvas.height = img.height;
-      console.log(`📸 ${timestamp()} [SETUP] Canvas size set to: ${this.canvas.width}×${this.canvas.height}px`);
+      console.log(`📸 ${timestamp()} [SETUP] Canvas internal size set to: ${this.canvas.width}×${this.canvas.height}px`);
+      
+      // Store original dimensions for later scaling
+      console.log(`📸 ${timestamp()} [SETUP] Storing original dimensions for later scaling...`);
+      this.originalCanvasWidth = img.width;
+      this.originalCanvasHeight = img.height;
+      this.displayScale = 1; // Will be updated when container is ready
       
       // Draw the screenshot
       console.log(`📸 ${timestamp()} [SETUP] Drawing image to canvas...`);
@@ -346,15 +368,8 @@ export default class ScreenshotCapture {
       this.originalImageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
       console.log(`📸 ${timestamp()} [SETUP] Original image data stored (${Date.now() - imageDataStart}ms)`);
       
-      // Update dimensions display
-      console.log(`📸 ${timestamp()} [SETUP] Updating dimensions display...`);
-      const dimensionsDisplay = this.options.container.querySelector('#dimensionsDisplay');
-      if (dimensionsDisplay) {
-        dimensionsDisplay.textContent = `${img.width}×${img.height}px`;
-        console.log(`📸 ${timestamp()} [SETUP] Dimensions display updated`);
-      } else {
-        console.log(`📸 ${timestamp()} [SETUP] Dimensions display element not found`);
-      }
+      // Dimensions display will be updated in centerCanvas() after scaling is calculated
+      console.log(`📸 ${timestamp()} [SETUP] Dimensions display will be updated after scaling...`);
       
       // Mark canvas as ready and center it immediately (FIRST CENTER - this one is good!)
       console.log(`📸 ${timestamp()} [SETUP] Canvas setup complete, centering immediately...`);
@@ -402,11 +417,11 @@ export default class ScreenshotCapture {
   }
 
   /**
-   * Center the canvas within its scrollable container
+   * Scale and center the canvas within its container
    */
   centerCanvas() {
     const timestamp = () => `[${new Date().toLocaleTimeString()}.${Date.now() % 1000}]`;
-    console.log(`🎯 ${timestamp()} [CENTER] ========== CANVAS CENTERING STARTED ==========`);
+    console.log(`🎯 ${timestamp()} [CENTER] ========== CANVAS SCALING & CENTERING STARTED ==========`);
     
     const container = this.options.container.querySelector('.screenshot-container');
     if (!container || !this.canvas) {
@@ -417,94 +432,73 @@ export default class ScreenshotCapture {
       return;
     }
     
-    console.log(`🎯 ${timestamp()} [CENTER] Container and canvas found, proceeding with centering...`);
-    
-    // Get container dimensions
-    console.log(`🎯 ${timestamp()} [CENTER] Getting container dimensions...`);
+    // Now that container is rendered, calculate proper scaling
+    console.log(`🎯 ${timestamp()} [CENTER] Calculating display size to fit container...`);
     const containerRect = container.getBoundingClientRect();
     const containerStyle = window.getComputedStyle(container);
     
     console.log(`🎯 ${timestamp()} [CENTER] Container rect:`, {
-      x: containerRect.x,
-      y: containerRect.y,
       width: containerRect.width,
-      height: containerRect.height
+      height: containerRect.height,
+      clientWidth: container.clientWidth,
+      clientHeight: container.clientHeight
     });
     
-    // Get actual padding values (handle shorthand padding)
-    console.log(`🎯 ${timestamp()} [CENTER] Calculating padding values...`);
+    // Account for padding
     const paddingTop = parseInt(containerStyle.paddingTop) || 0;
     const paddingRight = parseInt(containerStyle.paddingRight) || 0;
     const paddingBottom = parseInt(containerStyle.paddingBottom) || 0;
     const paddingLeft = parseInt(containerStyle.paddingLeft) || 0;
     
-    console.log(`🎯 ${timestamp()} [CENTER] Container padding:`, {
-      top: paddingTop,
-      right: paddingRight,
-      bottom: paddingBottom,
-      left: paddingLeft
-    });
+    // Available space in container (leave some margin)
+    const availableWidth = container.clientWidth - paddingLeft - paddingRight - 20; // 20px margin
+    const availableHeight = container.clientHeight - paddingTop - paddingBottom - 20; // 20px margin
     
-    // Calculate actual scrollable dimensions
-    console.log(`🎯 ${timestamp()} [CENTER] Calculating scrollable dimensions...`);
-    const scrollableWidth = container.clientWidth - paddingLeft - paddingRight;
-    const scrollableHeight = container.clientHeight - paddingTop - paddingBottom;
+    console.log(`🎯 ${timestamp()} [CENTER] Available space: ${availableWidth}×${availableHeight}px`);
+    console.log(`🎯 ${timestamp()} [CENTER] Canvas original size: ${this.originalCanvasWidth}×${this.originalCanvasHeight}px`);
     
-    console.log(`🎯 ${timestamp()} [CENTER] Scrollable area:`, {
-      width: scrollableWidth,
-      height: scrollableHeight,
-      clientWidth: container.clientWidth,
-      clientHeight: container.clientHeight
-    });
-    
-    // Get canvas dimensions
-    const canvasWidth = this.canvas.width;
-    const canvasHeight = this.canvas.height;
-    
-    console.log(`🎯 ${timestamp()} [CENTER] Canvas dimensions:`, {
-      width: canvasWidth,
-      height: canvasHeight
-    });
-    
-    // Calculate center position - ensure we don't scroll to negative values
-    console.log(`🎯 ${timestamp()} [CENTER] Calculating center positions...`);
-    const centerX = Math.max(0, (canvasWidth - scrollableWidth) / 2);
-    const centerY = Math.max(0, (canvasHeight - scrollableHeight) / 2);
-    
-    console.log(`🎯 ${timestamp()} [CENTER] Target center positions:`, {
-      x: centerX,
-      y: centerY
-    });
-    
-    // Only scroll if the canvas is larger than the container
-    console.log(`🎯 ${timestamp()} [CENTER] Applying scroll positions...`);
-    if (canvasWidth > scrollableWidth) {
-      console.log(`🎯 ${timestamp()} [CENTER] Canvas wider than container, scrolling horizontally to ${centerX}`);
-      container.scrollLeft = centerX;
+    if (this.originalCanvasWidth && this.originalCanvasHeight && availableWidth > 0 && availableHeight > 0) {
+      // Calculate scale to fit (maintain aspect ratio)
+      const scaleX = availableWidth / this.originalCanvasWidth;
+      const scaleY = availableHeight / this.originalCanvasHeight;
+      const scale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
+      
+      // Set display size
+      const displayWidth = this.originalCanvasWidth * scale;
+      const displayHeight = this.originalCanvasHeight * scale;
+      
+      console.log(`🎯 ${timestamp()} [CENTER] Scale factors: x=${scaleX.toFixed(3)}, y=${scaleY.toFixed(3)}, final=${scale.toFixed(3)}`);
+      console.log(`🎯 ${timestamp()} [CENTER] Setting display size: ${displayWidth}×${displayHeight}px`);
+      
+      this.canvas.style.width = `${displayWidth}px`;
+      this.canvas.style.height = `${displayHeight}px`;
+      
+      // Store scale for coordinate calculations
+      this.displayScale = scale;
+      
+      // Update dimensions display
+      const dimensionsDisplay = this.options.container.querySelector('#dimensionsDisplay');
+      if (dimensionsDisplay) {
+        const scaleText = scale < 1 ? ` (${Math.round(scale * 100)}% scale)` : '';
+        dimensionsDisplay.textContent = `${this.originalCanvasWidth}×${this.originalCanvasHeight}px${scaleText}`;
+      }
+      
+      console.log(`🎯 ${timestamp()} [CENTER] Canvas scaled successfully! Scale factor: ${scale.toFixed(3)}`);
     } else {
-      console.log(`🎯 ${timestamp()} [CENTER] Canvas fits horizontally, resetting scroll to 0`);
-      container.scrollLeft = 0; // Reset to left if canvas fits
+      console.log(`🎯 ${timestamp()} [CENTER] Using original size - no scaling needed`);
+      this.displayScale = 1;
     }
     
-    if (canvasHeight > scrollableHeight) {
-      console.log(`🎯 ${timestamp()} [CENTER] Canvas taller than container, scrolling vertically to ${centerY}`);
-      container.scrollTop = centerY;
-    } else {
-      console.log(`🎯 ${timestamp()} [CENTER] Canvas fits vertically, resetting scroll to 0`);
-      container.scrollTop = 0; // Reset to top if canvas fits
-    }
+    // Center the canvas with CSS
+    this.canvas.style.display = 'block';
+    this.canvas.style.margin = 'auto';
     
-    const actualScrollX = container.scrollLeft;
-    const actualScrollY = container.scrollTop;
+    // Reset any scroll position since canvas should now fit
+    container.scrollLeft = 0;
+    container.scrollTop = 0;
     
-    console.log(`🎯 ${timestamp()} [CENTER] Final scroll positions:`, {
-      target: { x: centerX, y: centerY },
-      actual: { x: actualScrollX, y: actualScrollY },
-      canvasSize: { width: canvasWidth, height: canvasHeight },
-      containerSize: { width: scrollableWidth, height: scrollableHeight }
-    });
-    
-    console.log(`🎯 ${timestamp()} [CENTER] ========== CANVAS CENTERING COMPLETE ==========`);
+    console.log(`🎯 ${timestamp()} [CENTER] Canvas centered and scroll reset`);
+    console.log(`🎯 ${timestamp()} [CENTER] ========== CANVAS SCALING & CENTERING COMPLETE ==========`);
   }
 
   /**
@@ -517,20 +511,19 @@ export default class ScreenshotCapture {
     const displayX = e.clientX - rect.left;
     const displayY = e.clientY - rect.top;
     
-    // Calculate scale factors between displayed size and actual canvas size
-    const scaleX = this.canvas.width / rect.width;
-    const scaleY = this.canvas.height / rect.height;
-    
-    // Convert to canvas coordinates
-    const canvasX = displayX * scaleX;
-    const canvasY = displayY * scaleY;
+    // Use the stored display scale to convert coordinates
+    const scale = this.displayScale || 1;
+    const canvasX = displayX / scale;
+    const canvasY = displayY / scale;
     
     // Debug coordinate conversion only on first use
     if (!this.coordsDebugLogged) {
-      console.log('🎯 [COORDS] Canvas scaling factors:', {
+      console.log('🎯 [COORDS] Canvas coordinate conversion:', {
+        displayScale: scale,
         canvasSize: { width: this.canvas.width, height: this.canvas.height },
         displaySize: { width: rect.width, height: rect.height },
-        scale: { x: scaleX, y: scaleY }
+        mouseDisplay: { x: displayX, y: displayY },
+        mouseCanvas: { x: canvasX, y: canvasY }
       });
       this.coordsDebugLogged = true;
     }
@@ -546,6 +539,11 @@ export default class ScreenshotCapture {
     const coords = this.getCanvasCoordinates(e);
     this.startX = coords.x;
     this.startY = coords.y;
+    
+    // For pen tool, initialize a path array
+    if (this.currentTool === 'pen') {
+      this.currentPath = [{ x: coords.x, y: coords.y }];
+    }
   }
 
   /**
@@ -565,17 +563,20 @@ export default class ScreenshotCapture {
     this.ctx.strokeStyle = this.currentColor;
     this.ctx.lineWidth = 3;
     this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
 
     if (this.currentTool === 'pen') {
-      // For pen tool, draw a line from last position to current
-      this.ctx.beginPath();
-      this.ctx.moveTo(this.startX, this.startY);
-      this.ctx.lineTo(currentX, currentY);
-      this.ctx.stroke();
+      // For pen tool, add point to current path and draw smooth curve
+      this.currentPath.push({ x: currentX, y: currentY });
       
-      // Update start position for continuous drawing
-      this.startX = currentX;
-      this.startY = currentY;
+      // Draw the complete path as a smooth curve
+      this.ctx.beginPath();
+      this.ctx.moveTo(this.currentPath[0].x, this.currentPath[0].y);
+      
+      for (let i = 1; i < this.currentPath.length; i++) {
+        this.ctx.lineTo(this.currentPath[i].x, this.currentPath[i].y);
+      }
+      this.ctx.stroke();
     } else if (this.currentTool === 'rectangle') {
       // Draw rectangle
       this.ctx.strokeRect(
@@ -598,22 +599,35 @@ export default class ScreenshotCapture {
     
     this.isDrawing = false;
     
-    const coords = this.getCanvasCoordinates(e);
-    const endX = coords.x;
-    const endY = coords.y;
+    // Save annotation based on tool type
+    let annotation;
     
-    // Save annotation
-    const annotation = {
-      type: this.currentTool,
-      color: this.currentColor,
-      startX: this.startX,
-      startY: this.startY,
-      endX: endX,
-      endY: endY,
-      timestamp: Date.now()
-    };
+    if (this.currentTool === 'pen') {
+      // For pen tool, save the complete path
+      annotation = {
+        type: this.currentTool,
+        color: this.currentColor,
+        path: [...this.currentPath], // Copy the path array
+        timestamp: Date.now()
+      };
+    } else {
+      // For other tools, save start/end coordinates
+      const coords = this.getCanvasCoordinates(e);
+      annotation = {
+        type: this.currentTool,
+        color: this.currentColor,
+        startX: this.startX,
+        startY: this.startY,
+        endX: coords.x,
+        endY: coords.y,
+        timestamp: Date.now()
+      };
+    }
     
     this.annotations.push(annotation);
+    
+    // Clear current path
+    this.currentPath = null;
     
     // Trigger callback
     if (this.options.onAnnotationChange) {
@@ -660,6 +674,7 @@ export default class ScreenshotCapture {
     this.ctx.strokeStyle = annotation.color;
     this.ctx.lineWidth = 3;
     this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
     
     if (annotation.type === 'rectangle') {
       this.ctx.strokeRect(
@@ -671,10 +686,22 @@ export default class ScreenshotCapture {
     } else if (annotation.type === 'arrow') {
       this.drawArrow(annotation.startX, annotation.startY, annotation.endX, annotation.endY);
     } else if (annotation.type === 'pen') {
-      this.ctx.beginPath();
-      this.ctx.moveTo(annotation.startX, annotation.startY);
-      this.ctx.lineTo(annotation.endX, annotation.endY);
-      this.ctx.stroke();
+      if (annotation.path && annotation.path.length > 0) {
+        // Draw path-based pen annotation (new format)
+        this.ctx.beginPath();
+        this.ctx.moveTo(annotation.path[0].x, annotation.path[0].y);
+        
+        for (let i = 1; i < annotation.path.length; i++) {
+          this.ctx.lineTo(annotation.path[i].x, annotation.path[i].y);
+        }
+        this.ctx.stroke();
+      } else {
+        // Legacy pen annotation format (fallback)
+        this.ctx.beginPath();
+        this.ctx.moveTo(annotation.startX, annotation.startY);
+        this.ctx.lineTo(annotation.endX, annotation.endY);
+        this.ctx.stroke();
+      }
     }
   }
 
