@@ -122,30 +122,35 @@ export default class AnnotationEngine {
   }
 
   /**
-   * Convert screen coordinates to canvas coordinates accounting for scaling, zoom, and pan
+   * Convert screen coordinates to canvas coordinates accounting for display scaling
    */
   getCanvasCoordinates(e) {
     const rect = this.canvas.getBoundingClientRect();
     
-    // Get the mouse position relative to the canvas display area
-    let displayX = e.clientX - rect.left;
-    let displayY = e.clientY - rect.top;
+    // Get mouse position relative to the displayed canvas
+    const displayX = e.clientX - rect.left;
+    const displayY = e.clientY - rect.top;
     
-    // Account for zoom and pan transformations
-    // Reverse the transform to get original canvas coordinates
-    displayX = (displayX - this.panX) / this.zoomLevel;
-    displayY = (displayY - this.panY) / this.zoomLevel;
+    // Convert from display coordinates to internal canvas coordinates
+    // Account for the fact that canvas is displayed smaller than its internal resolution
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
     
-    // Calculate the actual scale ratio between canvas internal size and original display size
-    const originalWidth = this.originalCanvasWidth * this.displayScale;
-    const originalHeight = this.originalCanvasHeight * this.displayScale;
-    
-    const scaleX = this.canvas.width / originalWidth;
-    const scaleY = this.canvas.height / originalHeight;
-    
-    // Convert display coordinates to canvas coordinates
     const canvasX = displayX * scaleX;
     const canvasY = displayY * scaleY;
+    
+    // Debug logging for first few calls
+    if (!this.coordsDebugLogged) {
+      console.log('🎯 [COORDS] Canvas scale coordinate conversion:', {
+        mouse: { x: e.clientX, y: e.clientY },
+        canvasRect: { left: rect.left, top: rect.top, width: rect.width, height: rect.height },
+        canvasInternal: { width: this.canvas.width, height: this.canvas.height },
+        displayPos: { x: displayX, y: displayY },
+        scale: { x: scaleX, y: scaleY },
+        result: { x: canvasX, y: canvasY }
+      });
+      this.coordsDebugLogged = true;
+    }
     
     return { x: canvasX, y: canvasY };
   }
@@ -377,6 +382,9 @@ export default class AnnotationEngine {
     if (zoomLevel !== undefined) this.zoomLevel = zoomLevel;
     if (panX !== undefined) this.panX = panX;
     if (panY !== undefined) this.panY = panY;
+    
+    // Reset debug logging when coordinate system updates
+    this.coordsDebugLogged = false;
   }
 
   /**

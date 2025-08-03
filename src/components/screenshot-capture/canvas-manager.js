@@ -252,16 +252,16 @@ export default class CanvasManager {
   /**
    * Redraw the canvas with original image and annotations
    */
-  redrawCanvas(annotations = []) {
+  redrawCanvas(annotations = [], drawAnnotationCallback = null) {
     if (!this.originalImageData) return;
     
     // Clear canvas and restore original image
     this.ctx.putImageData(this.originalImageData, 0, 0);
     
-    // Redraw all annotations (if annotation engine is provided)
-    if (annotations.length > 0 && this.options.annotationEngine) {
+    // Redraw all annotations using the provided callback
+    if (annotations.length > 0 && drawAnnotationCallback) {
       annotations.forEach(annotation => {
-        this.options.annotationEngine.drawAnnotation(annotation);
+        drawAnnotationCallback(annotation);
       });
     }
   }

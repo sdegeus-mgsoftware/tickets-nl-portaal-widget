@@ -65,17 +65,7 @@ export default class ScreenshotCapture {
     const canvas = this.options.container.querySelector('#screenshotCanvas');
     const drawingToolsContainer = this.options.container.querySelector('.drawing-tools-container');
 
-    // Initialize annotation storage first
-    this.annotationStorage = new AnnotationStorage({
-      onAnnotationChange: (annotations) => {
-        this.canvasManager?.redrawCanvas(annotations);
-        if (this.options.onAnnotationChange) {
-          this.options.onAnnotationChange(annotations);
-        }
-      }
-    });
-
-    // Initialize canvas manager
+    // Initialize canvas manager first
     this.canvasManager = new CanvasManager({
       canvas: canvas,
       container: this.options.container,
@@ -88,7 +78,20 @@ export default class ScreenshotCapture {
     this.annotationEngine = new AnnotationEngine({
       canvas: canvas,
       onAnnotationComplete: (annotation) => {
-        this.annotationStorage.addAnnotation(annotation);
+        this.annotationStorage?.addAnnotation(annotation);
+      }
+    });
+
+    // Initialize annotation storage (after annotation engine is ready)
+    this.annotationStorage = new AnnotationStorage({
+      onAnnotationChange: (annotations) => {
+        // Provide the annotation drawing callback to canvas manager
+        this.canvasManager?.redrawCanvas(annotations, (annotation) => {
+          this.annotationEngine?.drawAnnotation(annotation);
+        });
+        if (this.options.onAnnotationChange) {
+          this.options.onAnnotationChange(annotations);
+        }
       }
     });
 
@@ -241,7 +244,10 @@ export default class ScreenshotCapture {
   centerCanvasWhenReady() {
     if (this.canvasManager) {
       this.canvasManager.centerCanvasWhenReady();
-      this.updateAnnotationEngineCoordinates();
+      // Give the canvas a moment to render then update coordinates
+      setTimeout(() => {
+        this.updateAnnotationEngineCoordinates();
+      }, 100);
     }
   }
 
@@ -251,7 +257,10 @@ export default class ScreenshotCapture {
   centerCanvas() {
     if (this.canvasManager) {
       this.canvasManager.centerCanvas();
-      this.updateAnnotationEngineCoordinates();
+      // Give the canvas a moment to render then update coordinates
+      setTimeout(() => {
+        this.updateAnnotationEngineCoordinates();
+      }, 50);
     }
     if (this.zoomPanController) {
       this.zoomPanController.centerCanvas();

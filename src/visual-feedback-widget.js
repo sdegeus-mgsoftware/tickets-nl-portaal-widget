@@ -168,6 +168,11 @@ export default class VisualFeedbackWidget {
     // Add click handler
     this.triggerButton.addEventListener('click', () => {
       console.log('🔘 [BUTTON] Trigger button clicked!');
+      
+      // Disable and hide button immediately to prevent double-clicks and screenshots
+      this.disableTriggerButton();
+      this.hideTriggerButton();
+      
       this.open();
     });
     
@@ -189,6 +194,50 @@ export default class VisualFeedbackWidget {
     };
     
     return styles[position] || styles['bottom-right'];
+  }
+
+  /**
+   * Disable the trigger button
+   */
+  disableTriggerButton() {
+    if (this.triggerButton) {
+      this.triggerButton.disabled = true;
+      this.triggerButton.style.opacity = '0.5';
+      this.triggerButton.style.cursor = 'not-allowed';
+      console.log('🔘 [BUTTON] Trigger button disabled');
+    }
+  }
+
+  /**
+   * Enable the trigger button
+   */
+  enableTriggerButton() {
+    if (this.triggerButton) {
+      this.triggerButton.disabled = false;
+      this.triggerButton.style.opacity = '1';
+      this.triggerButton.style.cursor = 'pointer';
+      console.log('🔘 [BUTTON] Trigger button enabled');
+    }
+  }
+
+  /**
+   * Hide the trigger button
+   */
+  hideTriggerButton() {
+    if (this.triggerButton) {
+      this.triggerButton.style.display = 'none';
+      console.log('🔘 [BUTTON] Trigger button hidden');
+    }
+  }
+
+  /**
+   * Show the trigger button
+   */
+  showTriggerButton() {
+    if (this.triggerButton) {
+      this.triggerButton.style.display = 'block';
+      console.log('🔘 [BUTTON] Trigger button shown');
+    }
   }
   
   /**
@@ -313,6 +362,10 @@ export default class VisualFeedbackWidget {
    * Handle modal close event
    */
   handleModalClose() {
+    // Re-enable and show the trigger button when modal closes
+    this.enableTriggerButton();
+    this.showTriggerButton();
+    
     if (this.config.onClose) {
       this.config.onClose();
     }

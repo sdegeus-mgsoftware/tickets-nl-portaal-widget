@@ -206,16 +206,36 @@ export default class ScreenshotProcessor {
   async captureFullPageAndCrop(viewportInfo) {
     const timestamp = () => `[${new Date().toLocaleTimeString()}.${Date.now() % 1000}]`;
     
-    console.log(`📸 ${timestamp()} [CAPTURE] Starting html2canvas capture of full page for cropping...`);
+    console.log(`📸 ${timestamp()} [CAPTURE] Starting html2canvas capture with background preservation...`);
     const captureStart = Date.now();
 
-    // Capture the full page
+    // Temporarily ensure body has the background styles applied
+    const originalBodyStyles = document.body.style.cssText;
+    const computedStyles = window.getComputedStyle(document.body);
+    
+    // Ensure background is explicitly set on body for html2canvas
+    if (computedStyles.background || computedStyles.backgroundImage) {
+      document.body.style.background = computedStyles.background;
+      document.body.style.backgroundImage = computedStyles.backgroundImage;
+      document.body.style.backgroundSize = computedStyles.backgroundSize;
+      document.body.style.backgroundPosition = computedStyles.backgroundPosition;
+      document.body.style.backgroundRepeat = computedStyles.backgroundRepeat;
+      document.body.style.backgroundAttachment = computedStyles.backgroundAttachment;
+    }
+
+    // Capture the full page - using document.body to maintain coordinate system
     const fullCanvas = await html2canvas(document.body, {
       useCORS: true,
       scale: 1,
       allowTaint: true,
-      logging: false // Disable html2canvas logging for cleaner output
+      logging: false, // Disable html2canvas logging for cleaner output
+      backgroundColor: null, // Don't override with white
+      width: window.innerWidth,
+      height: Math.max(document.body.scrollHeight, document.documentElement.scrollHeight)
     });
+
+    // Restore original body styles
+    document.body.style.cssText = originalBodyStyles;
 
     console.log(`📸 ${timestamp()} [CAPTURE] Full page captured: ${fullCanvas.width}×${fullCanvas.height}px`);
 
