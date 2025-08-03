@@ -123,15 +123,26 @@ export default class ScreenshotProcessor {
     const elementsToHide = [
       { selector: '#visualFeedbackModal', element: document.getElementById('visualFeedbackModal') },
       { selector: '#stopRecordingFloating', element: document.getElementById('stopRecordingFloating') },
-      { selector: '#screenshotLoadingIndicator', element: document.getElementById('screenshotLoadingIndicator') },
-      { selector: '.help-button', element: document.querySelector('.help-button') }
+      { selector: '#screenshotLoadingIndicator', element: document.getElementById('screenshotLoadingIndicator') }
     ];
+
+    // Hide ALL help buttons (there might be multiple)
+    const helpButtons = document.querySelectorAll('.help-button');
+    helpButtons.forEach((button, index) => {
+      if (button) {
+        elementsToHide.push({
+          selector: `.help-button[${index}]`,
+          element: button
+        });
+      }
+    });
 
     console.log(`📸 ${timestamp()} [CAPTURE] UI elements found:`, {
       modal: !!elementsToHide[0].element,
       stopButton: !!elementsToHide[1].element,
       screenshotLoader: !!elementsToHide[2].element,
-      helpButton: !!elementsToHide[3].element
+      helpButtonsCount: helpButtons.length,
+      totalElementsToHide: elementsToHide.length
     });
 
     // Store original states and hide elements

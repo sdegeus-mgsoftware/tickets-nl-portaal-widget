@@ -197,47 +197,67 @@ export default class VisualFeedbackWidget {
   }
 
   /**
-   * Disable the trigger button
+   * Disable ALL widget buttons (prevents clicks, visual feedback)
    */
   disableTriggerButton() {
-    if (this.triggerButton) {
-      this.triggerButton.disabled = true;
-      this.triggerButton.style.opacity = '0.5';
-      this.triggerButton.style.cursor = 'not-allowed';
-      console.log('🔘 [BUTTON] Trigger button disabled');
-    }
+    // Disable all help buttons
+    const helpButtons = document.querySelectorAll('.help-button');
+    helpButtons.forEach((button, index) => {
+      if (button) {
+        button.disabled = true;
+        button.style.opacity = '0.5';
+        button.style.cursor = 'not-allowed';
+        console.log(`🔘 [BUTTON] Help button ${index + 1} disabled`);
+      }
+    });
+    console.log(`🔘 [BUTTON] All ${helpButtons.length} widget buttons disabled`);
   }
 
   /**
-   * Enable the trigger button
+   * Enable ALL widget buttons
    */
   enableTriggerButton() {
-    if (this.triggerButton) {
-      this.triggerButton.disabled = false;
-      this.triggerButton.style.opacity = '1';
-      this.triggerButton.style.cursor = 'pointer';
-      console.log('🔘 [BUTTON] Trigger button enabled');
-    }
+    // Enable all help buttons
+    const helpButtons = document.querySelectorAll('.help-button');
+    helpButtons.forEach((button, index) => {
+      if (button) {
+        button.disabled = false;
+        button.style.opacity = '1';
+        button.style.cursor = 'pointer';
+        console.log(`🔘 [BUTTON] Help button ${index + 1} enabled`);
+      }
+    });
+    console.log(`🔘 [BUTTON] All ${helpButtons.length} widget buttons enabled`);
   }
 
   /**
-   * Hide the trigger button
+   * Hide ALL widget buttons (trigger button and any floating help buttons)
    */
   hideTriggerButton() {
-    if (this.triggerButton) {
-      this.triggerButton.style.display = 'none';
-      console.log('🔘 [BUTTON] Trigger button hidden');
-    }
+    // Hide all help buttons (including trigger and floating buttons)
+    const helpButtons = document.querySelectorAll('.help-button');
+    helpButtons.forEach((button, index) => {
+      if (button) {
+        button.style.display = 'none';
+        console.log(`🔘 [BUTTON] Help button ${index + 1} hidden`);
+      }
+    });
+    console.log(`🔘 [BUTTON] All ${helpButtons.length} widget buttons hidden`);
   }
 
   /**
-   * Show the trigger button
+   * Show ALL widget buttons (trigger button and any floating help buttons)
    */
   showTriggerButton() {
-    if (this.triggerButton) {
-      this.triggerButton.style.display = 'block';
-      console.log('🔘 [BUTTON] Trigger button shown');
-    }
+    // Show all help buttons (including trigger and floating buttons)
+    const helpButtons = document.querySelectorAll('.help-button');
+    helpButtons.forEach((button, index) => {
+      if (button) {
+        button.style.display = 'block';
+        console.log(`🔘 [BUTTON] Help button ${index + 1} shown`);
+      }
+    });
+    console.log(`🔘 [BUTTON] All ${helpButtons.length} widget buttons shown`);
   }
   
   /**

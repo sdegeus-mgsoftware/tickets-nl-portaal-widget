@@ -58,12 +58,22 @@
   }
   
   &.active {
-    background: #4f46e5;
-    border-color: #4f46e5;
+    background: #4f46e5 !important;
+    border-color: #4f46e5 !important;
     color: white !important;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
-    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4) !important;
+    font-weight: 600 !important;
   }
+}
+
+// Extra specific rule to ensure drawing tools have proper active styling
+.drawing-tools .tool-btn.active,
+.action-tools .tool-btn.active {
+  background: #4f46e5 !important;
+  border-color: #4f46e5 !important;
+  color: white !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4) !important;
 }
 
 .color-options {
@@ -353,10 +363,10 @@
     }
     
     &.active {
-      background: #4f46e5;
-      border-color: #4f46e5;
+      background: #4f46e5 !important;
+      border-color: #4f46e5 !important;
       color: white !important;
-      font-weight: 600;
+      font-weight: 600 !important;
     }
   }
   
