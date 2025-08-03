@@ -133,10 +133,13 @@ module.exports = (env, argv) => {
         publicPath: '/'
       },
       compress: true,
-      port: 8080,
-      open: true,
+      port: 3000,
+      open: false, // Don't auto-open since test server is already running
       hot: true,
-      historyApiFallback: true
+      historyApiFallback: true,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      }
     },
     
     stats: {
