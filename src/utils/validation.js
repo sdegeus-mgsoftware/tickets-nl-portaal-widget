@@ -1,4 +1,4 @@
-export function validateRequired(value: any): boolean {
+export function validateRequired(value) {
   if (value === null || value === undefined) {
     return false;
   }
@@ -14,17 +14,17 @@ export function validateRequired(value: any): boolean {
   return true;
 }
 
-export function validateEmail(email: string): boolean {
+export function validateEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 }
 
-export function validatePhone(phone: string): boolean {
+export function validatePhone(phone) {
   const phoneRegex = /^\+?[\d\s\-\(\)]{10,}$/;
   return phoneRegex.test(phone);
 }
 
-export function validateUrl(url: string): boolean {
+export function validateUrl(url) {
   try {
     new URL(url);
     return true;
@@ -33,15 +33,15 @@ export function validateUrl(url: string): boolean {
   }
 }
 
-export function validateFileSize(file: File, maxSize: number): boolean {
+export function validateFileSize(file, maxSize) {
   return file.size <= maxSize;
 }
 
-export function validateFileType(file: File, allowedTypes: string[]): boolean {
+export function validateFileType(file, allowedTypes) {
   return allowedTypes.includes(file.type);
 }
 
-export function sanitizeInput(input: string): string {
+export function sanitizeInput(input) {
   if (!input) return '';
   
   return input
@@ -52,13 +52,13 @@ export function sanitizeInput(input: string): string {
     .substring(0, 1000); // Limit length
 }
 
-export function sanitizeHtml(html: string): string {
+export function sanitizeHtml(html) {
   const tempDiv = document.createElement('div');
   tempDiv.textContent = html;
   return tempDiv.innerHTML;
 }
 
-export function validateCustomField(value: any, field: any): { isValid: boolean; error?: string } {
+export function validateCustomField(value, field) {
   if (field.required && !validateRequired(value)) {
     return { isValid: false, error: `${field.label} is required` };
   }
@@ -72,4 +72,4 @@ export function validateCustomField(value: any, field: any): { isValid: boolean;
   }
   
   return { isValid: true };
-} 
+}

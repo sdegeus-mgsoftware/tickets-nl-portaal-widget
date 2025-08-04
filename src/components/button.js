@@ -1,25 +1,14 @@
-import { PositionType, ThemeType } from '@/core/types';
-import { createElement } from '@/utils/helpers';
-
-export interface WidgetButtonConfig {
-  text: string;
-  position: PositionType;
-  theme: ThemeType;
-  onClick: () => void;
-}
+import { createElement } from '../utils/helpers.js';
 
 export class WidgetButton {
-  private element: HTMLElement;
-  private config: WidgetButtonConfig;
-
-  constructor(config: WidgetButtonConfig) {
+  constructor(config) {
     this.config = config;
     this.element = this.createElement();
     this.attachEventListeners();
     this.render();
   }
 
-  private createElement(): HTMLElement {
+  createElement() {
     const button = createElement('div', {
       class: `ticket-widget-button ticket-widget-${this.config.position} ticket-widget-theme-${this.config.theme}`,
       id: 'ticket-widget-button'
@@ -35,30 +24,30 @@ export class WidgetButton {
     return button;
   }
 
-  private attachEventListeners(): void {
-    const triggerButton = this.element.querySelector('.ticket-widget-trigger') as HTMLButtonElement;
+  attachEventListeners() {
+    const triggerButton = this.element.querySelector('.ticket-widget-trigger');
     if (triggerButton) {
       triggerButton.addEventListener('click', this.config.onClick);
     }
   }
 
-  private render(): void {
+  render() {
     document.body.appendChild(this.element);
   }
 
-  public show(): void {
+  show() {
     this.element.classList.remove('ticket-widget-hidden');
     this.element.classList.add('ticket-widget-visible');
     this.element.style.display = 'block';
   }
 
-  public hide(): void {
+  hide() {
     this.element.classList.remove('ticket-widget-visible');
     this.element.classList.add('ticket-widget-hidden');
     this.element.style.display = 'none';
   }
 
-  public setText(text: string): void {
+  setText(text) {
     this.config.text = text;
     const textElement = this.element.querySelector('.ticket-widget-text');
     if (textElement) {
@@ -66,7 +55,7 @@ export class WidgetButton {
     }
   }
 
-  public destroy(): void {
+  destroy() {
     this.element.remove();
   }
-} 
+}

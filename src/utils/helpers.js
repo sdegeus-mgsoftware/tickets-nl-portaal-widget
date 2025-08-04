@@ -1,28 +1,22 @@
-export function generateSessionId(): string {
+export function generateSessionId() {
   return 'sess_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
-export function generateUniqueId(): string {
+export function generateUniqueId() {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
-export function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  delay: number
-): (...args: Parameters<T>) => void {
-  let timeoutId: ReturnType<typeof setTimeout>;
-  return (...args: Parameters<T>) => {
+export function debounce(func, delay) {
+  let timeoutId;
+  return (...args) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => func(...args), delay);
   };
 }
 
-export function throttle<T extends (...args: any[]) => any>(
-  func: T,
-  limit: number
-): (...args: Parameters<T>) => void {
-  let inThrottle: boolean;
-  return (...args: Parameters<T>) => {
+export function throttle(func, limit) {
+  let inThrottle;
+  return (...args) => {
     if (!inThrottle) {
       func(...args);
       inThrottle = true;
@@ -31,7 +25,7 @@ export function throttle<T extends (...args: any[]) => any>(
   };
 }
 
-export function formatFileSize(bytes: number): string {
+export function formatFileSize(bytes) {
   const units = ['B', 'KB', 'MB', 'GB'];
   let unitIndex = 0;
   let size = bytes;
@@ -44,37 +38,37 @@ export function formatFileSize(bytes: number): string {
   return `${size.toFixed(1)} ${units[unitIndex]}`;
 }
 
-export function formatDate(date: Date | string): string {
+export function formatDate(date) {
   const d = new Date(date);
   return d.toLocaleDateString() + ' ' + d.toLocaleTimeString();
 }
 
-export function isValidDomain(domain: string): boolean {
+export function isValidDomain(domain) {
   const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
   return domainRegex.test(domain);
 }
 
-export function getCurrentDomain(): string {
+export function getCurrentDomain() {
   return window.location.hostname;
 }
 
-export function addClass(element: HTMLElement, className: string): void {
+export function addClass(element, className) {
   element.classList.add(className);
 }
 
-export function removeClass(element: HTMLElement, className: string): void {
+export function removeClass(element, className) {
   element.classList.remove(className);
 }
 
-export function toggleClass(element: HTMLElement, className: string): void {
+export function toggleClass(element, className) {
   element.classList.toggle(className);
 }
 
-export function hasClass(element: HTMLElement, className: string): boolean {
+export function hasClass(element, className) {
   return element.classList.contains(className);
 }
 
-export function createElement(tag: string, attributes?: Record<string, string>): HTMLElement {
+export function createElement(tag, attributes) {
   const element = document.createElement(tag);
   
   if (attributes) {
@@ -86,26 +80,26 @@ export function createElement(tag: string, attributes?: Record<string, string>):
   return element;
 }
 
-export function removeElement(element: HTMLElement): void {
+export function removeElement(element) {
   element.remove();
 }
 
-export function insertAfter(newElement: HTMLElement, targetElement: HTMLElement): void {
+export function insertAfter(newElement, targetElement) {
   targetElement.parentNode?.insertBefore(newElement, targetElement.nextSibling);
 }
 
-export function animate(element: HTMLElement, keyframes: Keyframe[], options?: KeyframeAnimationOptions): Animation {
+export function animate(element, keyframes, options) {
   return element.animate(keyframes, options);
 }
 
-export function getScrollPosition(): { x: number; y: number } {
+export function getScrollPosition() {
   return {
     x: window.pageXOffset || document.documentElement.scrollLeft,
     y: window.pageYOffset || document.documentElement.scrollTop
   };
 }
 
-export function isElementInViewport(element: HTMLElement): boolean {
+export function isElementInViewport(element) {
   const rect = element.getBoundingClientRect();
   return (
     rect.top >= 0 &&
@@ -115,7 +109,7 @@ export function isElementInViewport(element: HTMLElement): boolean {
   );
 }
 
-export function copyToClipboard(text: string): Promise<void> {
+export function copyToClipboard(text) {
   if (navigator.clipboard && window.isSecureContext) {
     return navigator.clipboard.writeText(text);
   } else {
@@ -139,4 +133,4 @@ export function copyToClipboard(text: string): Promise<void> {
       }
     });
   }
-} 
+}

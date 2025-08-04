@@ -1,16 +1,16 @@
-type EventListener = (...args: any[]) => void;
-
 export class EventEmitter {
-  private events: Map<string, EventListener[]> = new Map();
+  constructor() {
+    this.events = new Map();
+  }
 
-  on(event: string, listener: EventListener): void {
+  on(event, listener) {
     if (!this.events.has(event)) {
       this.events.set(event, []);
     }
-    this.events.get(event)!.push(listener);
+    this.events.get(event).push(listener);
   }
 
-  off(event: string, listener: EventListener): void {
+  off(event, listener) {
     const listeners = this.events.get(event);
     if (listeners) {
       const index = listeners.indexOf(listener);
@@ -20,7 +20,7 @@ export class EventEmitter {
     }
   }
 
-  emit(event: string, ...args: any[]): void {
+  emit(event, ...args) {
     const listeners = this.events.get(event);
     if (listeners) {
       listeners.forEach(listener => {
@@ -33,7 +33,7 @@ export class EventEmitter {
     }
   }
 
-  removeAllListeners(event?: string): void {
+  removeAllListeners(event) {
     if (event) {
       this.events.delete(event);
     } else {
@@ -41,7 +41,7 @@ export class EventEmitter {
     }
   }
 
-  listenerCount(event: string): number {
+  listenerCount(event) {
     return this.events.get(event)?.length || 0;
   }
-} 
+}
