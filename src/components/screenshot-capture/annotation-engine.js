@@ -141,14 +141,6 @@ export default class AnnotationEngine {
     
     // Debug logging for first few calls
     if (!this.coordsDebugLogged) {
-      console.log('🎯 [COORDS] Canvas scale coordinate conversion:', {
-        mouse: { x: e.clientX, y: e.clientY },
-        canvasRect: { left: rect.left, top: rect.top, width: rect.width, height: rect.height },
-        canvasInternal: { width: this.canvas.width, height: this.canvas.height },
-        displayPos: { x: displayX, y: displayY },
-        scale: { x: scaleX, y: scaleY },
-        result: { x: canvasX, y: canvasY }
-      });
       this.coordsDebugLogged = true;
     }
     

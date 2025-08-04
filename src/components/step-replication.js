@@ -143,12 +143,7 @@ export default class StepReplication {
       endTime: Date.now()
     };
 
-    console.log('Screen recording completed:', {
-      duration: this.recordingData.duration,
-      steps: this.replicationSteps.length,
-      videoSize: blob.size
-    });
-  }
+    }
 
   /**
    * Set up interaction tracking

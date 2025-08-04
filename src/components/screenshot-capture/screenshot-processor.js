@@ -20,7 +20,7 @@ export default class ScreenshotProcessor {
    */
   async takeScreenshot() {
     const timestamp = () => `[${new Date().toLocaleTimeString()}.${Date.now() % 1000}]`;
-    console.log(`📸 ${timestamp()} [SCREENSHOT] ========== SCREENSHOT PROCESS STARTED ==========`);
+
     
     if (this.isProcessing) {
       throw new Error('Screenshot already in progress');
@@ -32,18 +32,18 @@ export default class ScreenshotProcessor {
       return await new Promise((resolve, reject) => {
         // Import html2canvas dynamically
         if (typeof html2canvas === 'undefined') {
-          console.log(`📸 ${timestamp()} [SCREENSHOT] html2canvas not loaded, importing from CDN...`);
+
           this.loadHtml2Canvas()
             .then(() => {
-              console.log(`📸 ${timestamp()} [SCREENSHOT] html2canvas loaded successfully, starting capture...`);
+
               this.captureScreen(resolve, reject);
             })
             .catch((error) => {
-              console.error(`📸 ${timestamp()} [SCREENSHOT] Failed to load html2canvas from CDN`);
+
               reject(error);
             });
         } else {
-          console.log(`📸 ${timestamp()} [SCREENSHOT] html2canvas already available, starting capture...`);
+
           this.captureScreen(resolve, reject);
         }
       });
@@ -72,20 +72,20 @@ export default class ScreenshotProcessor {
     const timestamp = () => `[${new Date().toLocaleTimeString()}.${Date.now() % 1000}]`;
     
     try {
-      console.log(`📸 ${timestamp()} [CAPTURE] ========== SCREEN CAPTURE STARTED ==========`);
+
       
       // Hide UI elements and store their states
       const hiddenElements = this.hideUIElements();
       
       // Wait for layout to stabilize
-      console.log(`📸 ${timestamp()} [CAPTURE] Waiting 250ms for layout to stabilize...`);
+
       const stabilizeStart = Date.now();
       await new Promise(resolve => setTimeout(resolve, 250));
-      console.log(`📸 ${timestamp()} [CAPTURE] Layout stabilized (${Date.now() - stabilizeStart}ms)`);
+
       
       // Get viewport information
       const viewportInfo = this.getViewportInfo();
-      console.log(`📸 ${timestamp()} [CAPTURE] Current viewport info:`, viewportInfo);
+
       
       // Capture and process screenshot
       const screenshotCanvas = await this.captureFullPageAndCrop(viewportInfo);
@@ -94,13 +94,12 @@ export default class ScreenshotProcessor {
       this.restoreUIElements(hiddenElements);
       
       // Convert to data URL
-      console.log(`📸 ${timestamp()} [CAPTURE] Converting to PNG data URL...`);
+
       const pngStart = Date.now();
       this.originalScreenshot = screenshotCanvas.toDataURL('image/png');
-      console.log(`📸 ${timestamp()} [CAPTURE] PNG conversion complete (${Date.now() - pngStart}ms)`);
-      console.log(`📸 ${timestamp()} [CAPTURE] Data URL length: ${this.originalScreenshot.length} chars`);
-      
-      console.log(`📸 ${timestamp()} [CAPTURE] ========== SCREEN CAPTURE COMPLETE ==========`);
+
+
+
       
       if (this.options.onComplete) {
         this.options.onComplete(screenshotCanvas, this.originalScreenshot);
@@ -108,7 +107,7 @@ export default class ScreenshotProcessor {
       
       resolve({ canvas: screenshotCanvas, dataUrl: this.originalScreenshot });
     } catch (error) {
-      console.error(`📸 ${timestamp()} [CAPTURE] ❌ Error during screen capture:`, error);
+
       reject(error);
     }
   }
@@ -118,8 +117,7 @@ export default class ScreenshotProcessor {
    */
   hideUIElements() {
     const timestamp = () => `[${new Date().toLocaleTimeString()}.${Date.now() % 1000}]`;
-    
-    console.log(`📸 ${timestamp()} [CAPTURE] Finding UI elements to hide...`);
+
     const elementsToHide = [
       { selector: '#visualFeedbackModal', element: document.getElementById('visualFeedbackModal') },
       { selector: '#stopRecordingFloating', element: document.getElementById('stopRecordingFloating') },
@@ -137,16 +135,8 @@ export default class ScreenshotProcessor {
       }
     });
 
-    console.log(`📸 ${timestamp()} [CAPTURE] UI elements found:`, {
-      modal: !!elementsToHide[0].element,
-      stopButton: !!elementsToHide[1].element,
-      screenshotLoader: !!elementsToHide[2].element,
-      helpButtonsCount: helpButtons.length,
-      totalElementsToHide: elementsToHide.length
-    });
-
     // Store original states and hide elements
-    console.log(`📸 ${timestamp()} [CAPTURE] Storing original states and hiding elements...`);
+
     const hiddenElements = [];
 
     elementsToHide.forEach(({ selector, element }) => {
@@ -161,18 +151,11 @@ export default class ScreenshotProcessor {
 
         // Hide the element
         element.style.display = 'none';
-        console.log(`📸 ${timestamp()} [CAPTURE] ${selector} hidden`);
+
 
         hiddenElements.push(originalState);
       }
     });
-
-    console.log(`📸 ${timestamp()} [CAPTURE] Original states:`, 
-      hiddenElements.map(item => ({ 
-        selector: item.selector, 
-        wasVisible: item.wasVisible 
-      }))
-    );
 
     return hiddenElements;
   }
@@ -182,8 +165,7 @@ export default class ScreenshotProcessor {
    */
   restoreUIElements(hiddenElements) {
     const timestamp = () => `[${new Date().toLocaleTimeString()}.${Date.now() % 1000}]`;
-    
-    console.log(`📸 ${timestamp()} [CAPTURE] Restoring UI elements...`);
+
 
     hiddenElements.forEach(({ element, selector, cssText, display, wasVisible }) => {
       if (element) {
@@ -194,7 +176,7 @@ export default class ScreenshotProcessor {
             element.style.display = display || 'flex';
           }
         }
-        console.log(`📸 ${timestamp()} [CAPTURE] ${selector} restored`);
+
       }
     });
   }
@@ -216,8 +198,7 @@ export default class ScreenshotProcessor {
    */
   async captureFullPageAndCrop(viewportInfo) {
     const timestamp = () => `[${new Date().toLocaleTimeString()}.${Date.now() % 1000}]`;
-    
-    console.log(`📸 ${timestamp()} [CAPTURE] Starting html2canvas capture with background preservation...`);
+
     const captureStart = Date.now();
 
     // Temporarily ensure body has the background styles applied
@@ -248,14 +229,12 @@ export default class ScreenshotProcessor {
     // Restore original body styles
     document.body.style.cssText = originalBodyStyles;
 
-    console.log(`📸 ${timestamp()} [CAPTURE] Full page captured: ${fullCanvas.width}×${fullCanvas.height}px`);
 
     // Create cropped canvas for viewport
     const croppedCanvas = this.cropToViewport(fullCanvas, viewportInfo);
 
-    console.log(`📸 ${timestamp()} [CAPTURE] Viewport cropped from full page (${Date.now() - captureStart}ms)`);
-    console.log(`📸 ${timestamp()} [CAPTURE] Cropped canvas dimensions: ${croppedCanvas.width}×${croppedCanvas.height}px`);
-    console.log(`📸 ${timestamp()} [CAPTURE] Cropped from position: ${viewportInfo.scrollX},${viewportInfo.scrollY}`);
+
+
 
     return croppedCanvas;
   }

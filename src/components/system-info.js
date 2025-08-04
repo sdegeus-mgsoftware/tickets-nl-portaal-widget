@@ -140,8 +140,7 @@ export default class SystemInfo {
       const ipData = await ipResponse.json();
       ip = ipData.ip;
     } catch (error) {
-      console.log('Could not fetch IP address:', error);
-    }
+      }
     
     return {
       ip: ip,
@@ -217,14 +216,57 @@ export default class SystemInfo {
 
   /**
    * Parse browser information from user agent
+   * Uses comprehensive detection including modern browser patterns
    */
   parseBrowserInfo(userAgent) {
+    // Detect Brave first using multiple methods
+    if (this.isBrave(userAgent)) {
+      const chromeMatch = userAgent.match(/Chrome\/(\d+\.\d+)/);
+      return {
+        browser: 'Brave',
+        version: chromeMatch ? chromeMatch[1] : 'Unknown'
+      };
+    }
+
+    // Browser detection patterns (order matters - most specific first)
     const browsers = [
-      { name: 'Chrome', regex: /Chrome\/(\d+\.\d+)/ },
-      { name: 'Firefox', regex: /Firefox\/(\d+\.\d+)/ },
-      { name: 'Safari', regex: /Version\/(\d+\.\d+).*Safari/ },
-      { name: 'Edge', regex: /Edge\/(\d+\.\d+)/ },
+      // Microsoft Edge (modern Chromium-based version uses Edg/)
+      { name: 'Edge', regex: /Edg\/(\d+\.\d+)/ },
+      
+      // Microsoft Edge (legacy EdgeHTML version)
+      { name: 'Edge Legacy', regex: /Edge\/(\d+\.\d+)/ },
+      
+      // Opera (modern versions use OPR/)
+      { name: 'Opera', regex: /OPR\/(\d+\.\d+)/ },
+      
+      // Opera (older versions)
       { name: 'Opera', regex: /Opera\/(\d+\.\d+)/ },
+      
+      // Vivaldi Browser (Chromium-based)
+      { name: 'Vivaldi', regex: /Vivaldi\/(\d+\.\d+)/ },
+      
+      // Samsung Internet Browser
+      { name: 'Samsung Internet', regex: /SamsungBrowser\/(\d+\.\d+)/ },
+      
+      // UC Browser
+      { name: 'UC Browser', regex: /UCBrowser\/(\d+\.\d+)/ },
+      
+      // Yandex Browser
+      { name: 'Yandex', regex: /YaBrowser\/(\d+\.\d+)/ },
+      
+      // Firefox
+      { name: 'Firefox', regex: /Firefox\/(\d+\.\d+)/ },
+      
+      // Safari (check before Chrome since some Safari UAs contain Chrome)
+      { name: 'Safari', regex: /Version\/(\d+\.\d+).*Safari/ },
+      
+      // Chrome (should be last among Chromium browsers)
+      { name: 'Chrome', regex: /Chrome\/(\d+\.\d+)/ },
+      
+      // Internet Explorer 11
+      { name: 'Internet Explorer', regex: /Trident\/.*rv:(\d+\.\d+)/ },
+      
+      // Older Internet Explorer
       { name: 'Internet Explorer', regex: /MSIE (\d+\.\d+)/ }
     ];
 
@@ -242,6 +284,48 @@ export default class SystemInfo {
       browser: 'Unknown',
       version: 'Unknown'
     };
+  }
+
+  /**
+   * Detect Brave browser using multiple methods
+   */
+  isBrave(userAgent) {
+    // Method 1: Check for navigator.brave API (most reliable when available)
+    if (typeof navigator !== 'undefined' && navigator.brave) {
+      try {
+        // Some versions have isBrave as a method, others as a property
+        if (typeof navigator.brave.isBrave === 'function') {
+          return navigator.brave.isBrave();
+        } else if (navigator.brave.isBrave === true) {
+          return true;
+        }
+      } catch (e) {
+        // Ignore errors and continue with other detection methods
+      }
+    }
+    
+    // Method 2: Check for explicit Brave in user agent
+    if (userAgent.includes('Brave') || userAgent.includes('brave')) {
+      return true;
+    }
+    
+    // Method 3: Check for Brave's specific user agent pattern
+    // Brave often modifies the Chrome user agent in subtle ways
+    if (userAgent.includes('Chrome') && userAgent.includes('Safari')) {
+      // Check if it's missing some Chrome-specific markers that Brave removes
+      if (!userAgent.includes('Google') && typeof navigator !== 'undefined' && navigator.vendor === 'Google Inc.') {
+        // Additional checks to avoid false positives
+        if (!userAgent.includes('OPR') && !userAgent.includes('Edg') && !userAgent.includes('Vivaldi')) {
+          // This might be Brave, but we need stronger evidence
+          // Check for absence of Chrome's typical branding
+          if (!userAgent.includes('Chrome/') || userAgent.includes('HeadlessChrome')) {
+            return false; // Likely headless Chrome or other variant
+          }
+        }
+      }
+    }
+    
+    return false;
   }
 
   /**
@@ -335,8 +419,7 @@ export default class SystemInfo {
         info.quota = estimate.quota;
         info.usage = estimate.usage;
       } catch (error) {
-        console.log('Could not get storage estimate:', error);
-      }
+        }
     }
 
     return info;

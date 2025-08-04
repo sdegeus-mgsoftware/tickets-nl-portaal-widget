@@ -68,7 +68,7 @@ export default class CanvasManager {
    */
   setupCanvas(screenshotCanvas, screenshotDataUrl) {
     const timestamp = () => `[${new Date().toLocaleTimeString()}.${Date.now() % 1000}]`;
-    console.log(`📸 ${timestamp()} [SETUP] ========== CANVAS SETUP STARTED ==========`);
+
     
     if (!this.canvas || !this.ctx) {
       throw new Error('Canvas not available for setup');
@@ -80,44 +80,43 @@ export default class CanvasManager {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
-        console.log(`📸 ${timestamp()} [SETUP] Image loaded for canvas setup`);
-        console.log(`📸 ${timestamp()} [SETUP] Image natural dimensions: ${img.naturalWidth}×${img.naturalHeight}px`);
+
+
         
         // Set canvas internal size to match screenshot (for high quality)
-        console.log(`📸 ${timestamp()} [SETUP] Setting canvas internal dimensions...`);
+
         this.canvas.width = img.width;
         this.canvas.height = img.height;
-        console.log(`📸 ${timestamp()} [SETUP] Canvas internal size set to: ${this.canvas.width}×${this.canvas.height}px`);
+
         
         // Store original dimensions for later scaling
-        console.log(`📸 ${timestamp()} [SETUP] Storing original dimensions for later scaling...`);
+
         this.originalCanvasWidth = img.width;
         this.originalCanvasHeight = img.height;
         this.displayScale = 1; // Will be updated when container is ready
         
         // Draw the screenshot
-        console.log(`📸 ${timestamp()} [SETUP] Drawing image to canvas...`);
+
         const drawStart = Date.now();
         this.ctx.drawImage(img, 0, 0);
-        console.log(`📸 ${timestamp()} [SETUP] Image drawn to canvas (${Date.now() - drawStart}ms)`);
+
         
         // Store original image data
-        console.log(`📸 ${timestamp()} [SETUP] Storing original image data...`);
+
         const imageDataStart = Date.now();
         this.originalImageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-        console.log(`📸 ${timestamp()} [SETUP] Original image data stored (${Date.now() - imageDataStart}ms)`);
+
         
         // Mark canvas as ready
-        console.log(`📸 ${timestamp()} [SETUP] Canvas setup complete, marking as ready...`);
+
         this.canvasReady = true;
         
         // Make canvas visible but without scaling yet
         if (this.canvas) {
           this.canvas.classList.add('canvas-ready');
-          console.log(`📸 ${timestamp()} [SETUP] Canvas marked as ready (scaling will happen later)`);
+
         }
-        
-        console.log(`📸 ${timestamp()} [SETUP] ========== CANVAS SETUP COMPLETE ==========`);
+
         
         if (this.options.onReady) {
           this.options.onReady();
@@ -131,11 +130,10 @@ export default class CanvasManager {
       };
       
       img.onerror = () => {
-        console.error(`📸 ${timestamp()} [SETUP] Failed to load image for canvas setup`);
+
         reject(new Error('Failed to load image for canvas setup'));
       };
-      
-      console.log(`📸 ${timestamp()} [SETUP] Starting image load from data URL...`);
+
       img.src = screenshotDataUrl;
     });
   }
@@ -145,24 +143,22 @@ export default class CanvasManager {
    */
   centerCanvasWhenReady() {
     const timestamp = () => `[${new Date().toLocaleTimeString()}.${Date.now() % 1000}]`;
-    console.log(`🎯 ${timestamp()} [CENTER] ========== CENTERING WHEN READY ==========`);
+
     
     if (!this.canvasReady) {
-      console.log(`🎯 ${timestamp()} [CENTER] Canvas not ready yet, skipping centering`);
+
       return;
     }
-    
-    console.log(`🎯 ${timestamp()} [CENTER] Canvas is ready, modal layout stable, centering now...`);
+
     this.centerCanvas();
     
     // Make canvas visible now that it's properly positioned
-    console.log(`🎯 ${timestamp()} [CENTER] Making canvas visible after proper positioning...`);
+
     if (this.canvas) {
       this.canvas.classList.add('canvas-ready');
-      console.log(`🎯 ${timestamp()} [CENTER] Canvas marked as ready and visible`);
+
     }
-    
-    console.log(`🎯 ${timestamp()} [CENTER] ========== CENTERING WHEN READY COMPLETE ==========`);
+
   }
 
   /**
@@ -170,28 +166,17 @@ export default class CanvasManager {
    */
   centerCanvas() {
     const timestamp = () => `[${new Date().toLocaleTimeString()}.${Date.now() % 1000}]`;
-    console.log(`🎯 ${timestamp()} [CENTER] ========== CANVAS SCALING & CENTERING STARTED ==========`);
+
     
     const containerElement = this.container.querySelector('.screenshot-container');
     if (!containerElement || !this.canvas) {
-      console.log(`🎯 ${timestamp()} [CENTER] Missing required elements:`, { 
-        container: !!containerElement, 
-        canvas: !!this.canvas 
-      });
       return;
     }
     
     // Now that container is rendered, calculate proper scaling
-    console.log(`🎯 ${timestamp()} [CENTER] Calculating display size to fit container...`);
+
     const containerRect = containerElement.getBoundingClientRect();
     const containerStyle = window.getComputedStyle(containerElement);
-    
-    console.log(`🎯 ${timestamp()} [CENTER] Container rect:`, {
-      width: containerRect.width,
-      height: containerRect.height,
-      clientWidth: containerElement.clientWidth,
-      clientHeight: containerElement.clientHeight
-    });
     
     // Account for padding
     const paddingTop = parseInt(containerStyle.paddingTop) || 0;
@@ -202,9 +187,8 @@ export default class CanvasManager {
     // Available space in container (leave some margin)
     const availableWidth = containerElement.clientWidth - paddingLeft - paddingRight - 20; // 20px margin
     const availableHeight = containerElement.clientHeight - paddingTop - paddingBottom - 20; // 20px margin
-    
-    console.log(`🎯 ${timestamp()} [CENTER] Available space: ${availableWidth}×${availableHeight}px`);
-    console.log(`🎯 ${timestamp()} [CENTER] Canvas original size: ${this.originalCanvasWidth}×${this.originalCanvasHeight}px`);
+
+
     
     if (this.originalCanvasWidth && this.originalCanvasHeight && availableWidth > 0 && availableHeight > 0) {
       // Calculate scale to fit (maintain aspect ratio)
@@ -215,19 +199,17 @@ export default class CanvasManager {
       // Set display size
       const displayWidth = this.originalCanvasWidth * scale;
       const displayHeight = this.originalCanvasHeight * scale;
-      
-      console.log(`🎯 ${timestamp()} [CENTER] Scale factors: x=${scaleX.toFixed(3)}, y=${scaleY.toFixed(3)}, final=${scale.toFixed(3)}`);
-      console.log(`🎯 ${timestamp()} [CENTER] Setting display size: ${displayWidth}×${displayHeight}px`);
+
+
       
       this.canvas.style.width = `${displayWidth}px`;
       this.canvas.style.height = `${displayHeight}px`;
       
       // Store scale for coordinate calculations
       this.displayScale = scale;
-      
-      console.log(`🎯 ${timestamp()} [CENTER] Canvas scaled successfully! Scale factor: ${scale.toFixed(3)}`);
+
     } else {
-      console.log(`🎯 ${timestamp()} [CENTER] Using original size - no scaling needed`);
+
       this.displayScale = 1;
     }
     
@@ -238,9 +220,8 @@ export default class CanvasManager {
     // Reset any scroll position since canvas should now fit
     containerElement.scrollLeft = 0;
     containerElement.scrollTop = 0;
-    
-    console.log(`🎯 ${timestamp()} [CENTER] Canvas centered and scroll reset`);
-    console.log(`🎯 ${timestamp()} [CENTER] ========== CANVAS SCALING & CENTERING COMPLETE ==========`);
+
+
 
     return {
       displayScale: this.displayScale,

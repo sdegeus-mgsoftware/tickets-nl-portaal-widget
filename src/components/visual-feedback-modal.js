@@ -77,8 +77,39 @@ export default class VisualFeedbackModal {
               <!-- Screenshot capture component will be injected here -->
             </div>
             
-            <div class="chat-panel" id="chatPanel">
-              <!-- Chat interface component will be injected here -->
+            <div class="tabbed-panel" id="tabbedPanel">
+              <!-- Tabbed interface for right side -->
+              <div class="tab-header">
+                <button class="tab-btn active" data-tab="chat">💬 Chat</button>
+                <button class="tab-btn" data-tab="system">💻 System Info</button>
+                <button class="tab-btn" data-tab="console">🖥️ Console Logs</button>
+                <button class="tab-btn" data-tab="network">🌐 Network Log</button>
+              </div>
+              
+              <div class="tab-content">
+                <div class="tab-panel active" id="chatTab">
+                  <!-- Chat interface component will be injected here -->
+                </div>
+                
+
+                
+                <div class="tab-panel" id="systemTab">
+                  <!-- System info component will be injected here -->
+                </div>
+                
+                <div class="tab-panel" id="consoleTab">
+                  <!-- Console logs component will be injected here -->
+                </div>
+                
+                <div class="tab-panel" id="networkTab">
+                  <!-- Network logs will be injected here -->
+                </div>
+              </div>
+              
+              <!-- Submit button - visible across all tabs -->
+              <div class="tab-footer">
+                <button class="submit-btn" id="globalSubmitButton">📤 Submit Feedback</button>
+              </div>
             </div>
           </div>
         </div>
@@ -94,7 +125,10 @@ export default class VisualFeedbackModal {
    */
   initializeComponents() {
     const screenshotPanel = this.modalElement.querySelector('#screenshotPanel');
-    const chatPanel = this.modalElement.querySelector('#chatPanel');
+    const chatTab = this.modalElement.querySelector('#chatTab');
+    const systemTab = this.modalElement.querySelector('#systemTab');
+    const consoleTab = this.modalElement.querySelector('#consoleTab');
+    const networkTab = this.modalElement.querySelector('#networkTab');
 
     // Initialize screenshot capture
     this.components.screenshotCapture = new ScreenshotCapture({
@@ -102,21 +136,16 @@ export default class VisualFeedbackModal {
       onAnnotationChange: this.handleAnnotationChange.bind(this)
     });
 
-    // Initialize step replication
-    this.components.stepReplication = new StepReplication({
-      onRecordingStart: this.handleRecordingStart.bind(this),
-      onRecordingStop: this.handleRecordingStop.bind(this),
-      onStepAdded: this.handleStepAdded.bind(this)
-    });
+
 
     // Initialize chat interface
     this.components.chatInterface = new ChatInterface({
-      container: chatPanel,
+      container: chatTab,
       onSendMessage: this.handleSendMessage.bind(this),
       onSubmit: this.handleSubmit.bind(this)
     });
 
-    // Initialize system info
+    // Initialize system info display in the system tab
     this.components.systemInfo = new SystemInfo({
       enableConsoleLogging: this.options.enableConsoleLogging,
       enableNetworkLogging: this.options.enableNetworkLogging
@@ -125,9 +154,19 @@ export default class VisualFeedbackModal {
     // Initialize console logger if enabled
     if (this.options.enableConsoleLogging) {
       this.components.consoleLogger = new ConsoleLogger({
+        container: consoleTab,
         onLogsCaptured: this.handleLogsCaptured.bind(this)
       });
     }
+
+    // Store network tab reference for network log rendering
+    this.networkTab = networkTab;
+
+    // Setup global submit button
+    this.setupGlobalSubmitButton();
+
+    // Setup tab switching functionality
+    this.setupTabSwitching();
   }
 
   /**
@@ -151,6 +190,274 @@ export default class VisualFeedbackModal {
         this.hide();
       }
     });
+  }
+
+  /**
+   * Setup global submit button
+   */
+  setupGlobalSubmitButton() {
+    const globalSubmitButton = this.modalElement.querySelector('#globalSubmitButton');
+    if (globalSubmitButton) {
+      globalSubmitButton.addEventListener('click', () => {
+        this.collectAndLogFeedbackData();
+      });
+    }
+  }
+
+  /**
+   * Setup tab switching functionality
+   */
+  setupTabSwitching() {
+    const tabButtons = this.modalElement.querySelectorAll('.tab-btn');
+    const tabPanels = this.modalElement.querySelectorAll('.tab-panel');
+
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const targetTab = button.getAttribute('data-tab');
+        
+        // Remove active class from all buttons and panels
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        tabPanels.forEach(panel => panel.classList.remove('active'));
+        
+        // Add active class to clicked button and corresponding panel
+        button.classList.add('active');
+        const targetPanel = this.modalElement.querySelector(`#${targetTab}Tab`);
+        if (targetPanel) {
+          targetPanel.classList.add('active');
+        }
+
+        // Handle tab-specific initialization when switching
+        this.handleTabSwitch(targetTab);
+      });
+    });
+  }
+
+  /**
+   * Handle tab switch events
+   */
+  handleTabSwitch(tabName) {
+    switch (tabName) {
+      case 'system':
+        this.displaySystemInfo();
+        break;
+      case 'console':
+        this.displayConsoleLogs();
+        break;
+      case 'network':
+        this.displayNetworkLogs();
+        break;
+      case 'steps':
+        this.displayStepRecording();
+        break;
+      // Chat tab is handled by ChatInterface component
+    }
+  }
+
+  /**
+   * Display system information in the system tab
+   */
+  displaySystemInfo() {
+    const systemTab = this.modalElement.querySelector('#systemTab');
+    if (!systemTab || !this.components.systemInfo) return;
+
+    // Use the cached system info that was gathered during modal initialization
+    const systemInfo = this.cachedSystemInfo || this.components.systemInfo.getData();
+    if (!systemInfo) {
+      systemTab.innerHTML = `
+        <div class="system-info-content">
+          <h4>💻 System Information</h4>
+          <p>System information is still being gathered...</p>
+        </div>
+      `;
+      return;
+    }
+
+    systemTab.innerHTML = `
+      <div class="system-info-content">
+        <h4>💻 System Information</h4>
+        <div class="info-grid">
+          <div class="info-item">
+            <strong>🌐 Browser:</strong> ${systemInfo.browser || 'N/A'} ${systemInfo.browserVersion || ''}
+          </div>
+          <div class="info-item">
+            <strong>💻 OS:</strong> ${systemInfo.os || 'N/A'} (${systemInfo.platform || 'N/A'})
+          </div>
+          <div class="info-item">
+            <strong>📱 Display:</strong> ${systemInfo.viewportWidth || 'N/A'}×${systemInfo.viewportHeight || 'N/A'} @ ${systemInfo.devicePixelRatio || 'N/A'}x
+          </div>
+          <div class="info-item">
+            <strong>🌍 Location:</strong> ${systemInfo.ip || 'N/A'} (${systemInfo.timezone || 'N/A'})
+          </div>
+          <div class="info-item">
+            <strong>🗣️ Language:</strong> ${systemInfo.language || 'N/A'}
+          </div>
+          <div class="info-item">
+            <strong>🔗 Connection:</strong> ${systemInfo.connectionType || 'N/A'}
+          </div>
+          <div class="info-item">
+            <strong>📍 Page URL:</strong> ${systemInfo.url || 'N/A'}
+          </div>
+          <div class="info-item">
+            <strong>⏰ Timestamp:</strong> ${systemInfo.timestamp ? new Date(systemInfo.timestamp).toLocaleString() : 'N/A'}
+          </div>
+          ${systemInfo.touchSupported ? `
+          <div class="info-item">
+            <strong>👆 Touch:</strong> Touch device detected
+          </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Display console logs in the console tab
+   */
+  displayConsoleLogs() {
+    const consoleTab = this.modalElement.querySelector('#consoleTab');
+    if (!consoleTab) return;
+
+    if (this.components.consoleLogger) {
+      const consoleLogs = this.components.consoleLogger.getLogs();
+      
+      if (consoleLogs.length === 0) {
+        consoleTab.innerHTML = `
+          <div class="console-info">
+            <h4>🖥️ Console Logs</h4>
+            <div class="console-logs-container">
+              <div class="console-empty-state">
+                <span class="empty-message">Console was cleared or no messages have been logged yet.</span>
+              </div>
+            </div>
+            <div class="log-actions">
+              <button class="clear-logs-btn" onclick="if(this.closest('.visual-feedback-modal').components?.consoleLogger) this.closest('.visual-feedback-modal').components.consoleLogger.clearConsoleLogs(); this.closest('.visual-feedback-modal').displayConsoleLogs();">🗑️ Clear Logs</button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // Generate console logs HTML with browser-like styling
+      const consoleLogsHtml = consoleLogs.map(log => {
+        const timestamp = new Date(log.timestamp).toLocaleTimeString();
+        
+        return `
+          <div class="console-log-entry ${log.level}">
+
+            <span class="log-message">${log.message}</span>
+            ${log.stack ? `<div class="log-stack"><pre>${log.stack}</pre></div>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      consoleTab.innerHTML = `
+        <div class="console-info">
+          <h4>🖥️ Console Logs (${consoleLogs.length})</h4>
+          <div class="console-logs-container">
+            ${consoleLogsHtml}
+          </div>
+          <div class="log-actions">
+            <button class="clear-logs-btn" onclick="if(this.closest('.visual-feedback-modal').components?.consoleLogger) this.closest('.visual-feedback-modal').components.consoleLogger.clearConsoleLogs(); this.closest('.visual-feedback-modal').displayConsoleLogs();">🗑️ Clear Logs</button>
+          </div>
+        </div>
+      `;
+    } else {
+      consoleTab.innerHTML = `
+        <div class="console-info">
+          <h4>🖥️ Console Logs</h4>
+          <p>Console logging is not enabled. Enable it in the widget configuration to see console logs here.</p>
+        </div>
+      `;
+    }
+  }
+
+  /**
+   * Display network logs in the network tab
+   */
+  displayNetworkLogs() {
+    const networkTab = this.modalElement.querySelector('#networkTab');
+    if (!networkTab) return;
+
+    if (this.components.consoleLogger) {
+      const networkLogs = this.components.consoleLogger.getNetworkLogs();
+      
+      if (networkLogs.length === 0) {
+        networkTab.innerHTML = `
+          <div class="network-info">
+            <h4>🌐 Network Logs</h4>
+            <p>No network requests captured yet. Network requests will appear here as they happen.</p>
+            <small>Tip: Refresh the page or interact with the application to see network activity.</small>
+          </div>
+        `;
+        return;
+      }
+
+      // Generate network logs HTML
+      const networkLogsHtml = networkLogs.map(log => {
+        const statusClass = log.status >= 400 ? 'error' : log.status >= 300 ? 'warning' : 'success';
+        const timestamp = new Date(log.timestamp).toLocaleTimeString();
+        
+        return `
+          <div class="network-log-entry ${statusClass}">
+            <div class="log-header">
+              <span class="method ${log.method}">${log.method}</span>
+              <span class="status status-${statusClass}">${log.status}</span>
+              <span class="url">${log.url}</span>
+
+            </div>
+            <div class="log-details">
+              <div class="detail-item">
+                <strong>Duration:</strong> ${log.duration}ms
+              </div>
+              <div class="detail-item">
+                <strong>Size:</strong> ${log.size} bytes
+              </div>
+              <div class="detail-item">
+                <strong>Type:</strong> ${log.type}
+              </div>
+              ${log.error ? `<div class="detail-item error"><strong>Error:</strong> ${log.error}</div>` : ''}
+            </div>
+            ${log.curlCommand ? `
+              <div class="curl-command">
+                <button class="copy-btn" onclick="navigator.clipboard.writeText('${log.curlCommand}')">📋 Copy cURL</button>
+                <code>${log.curlCommand}</code>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      networkTab.innerHTML = `
+        <div class="network-info">
+          <h4>🌐 Network Logs (${networkLogs.length})</h4>
+          <div class="network-logs-container">
+            ${networkLogsHtml}
+          </div>
+          <div class="log-actions">
+            <button class="clear-logs-btn" onclick="if(this.closest('.visual-feedback-modal').components?.consoleLogger) this.closest('.visual-feedback-modal').components.consoleLogger.clearNetworkLogs(); this.closest('.visual-feedback-modal').displayNetworkLogs();">🗑️ Clear Logs</button>
+          </div>
+        </div>
+      `;
+    } else {
+      networkTab.innerHTML = `
+        <div class="network-info">
+          <h4>🌐 Network Logs</h4>
+          <p>Network logging is not enabled. Enable console/network logging in the widget configuration to see network requests here.</p>
+        </div>
+      `;
+    }
+  }
+
+  /**
+   * Display step recording interface in the steps tab
+   */
+  displayStepRecording() {
+    const stepsTab = this.modalElement.querySelector('#stepsTab');
+    if (!stepsTab || !this.components.stepReplication) return;
+
+    // StepReplication component will render its own content when initialized
+    // We just need to ensure it has the right container
+    this.components.stepReplication.setContainer(stepsTab);
   }
 
   /**
@@ -248,69 +555,41 @@ export default class VisualFeedbackModal {
    * Show the modal
    */
   async show() {
-    const timestamp = () => `[${new Date().toLocaleTimeString()}.${Date.now() % 1000}]`;
-    console.log(`🚀 ${timestamp()} [SHOW] ========== MODAL SHOW PROCESS STARTED ==========`);
-    
     if (this.isVisible) {
-      console.log(`🔍 ${timestamp()} [SHOW] Modal already visible, returning`);
       return;
     }
 
-    // Step 1: Show temporary loading indicator on page BEFORE taking screenshot
-    console.log(`📸 ${timestamp()} [STEP-1] Showing screenshot loading indicator...`);
+    // Show temporary loading indicator on page BEFORE taking screenshot
     this.showScreenshotLoadingIndicator();
-    console.log(`📸 ${timestamp()} [STEP-1] Loading indicator displayed`);
     
-    // Step 2: Wait a moment for any animations to settle
-    console.log(`📸 ${timestamp()} [STEP-2] Waiting 200ms for layout to stabilize...`);
-    const waitStart = Date.now();
+    // Wait a moment for any animations to settle
     await new Promise(resolve => setTimeout(resolve, 200));
-    console.log(`📸 ${timestamp()} [STEP-2] Layout stabilization complete (${Date.now() - waitStart}ms)`);
     
-    // Step 3: Take screenshot and WAIT for it to complete
-    console.log(`📸 ${timestamp()} [STEP-3] Starting screenshot capture...`);
-    const screenshotStart = Date.now();
+    // Take screenshot and WAIT for it to complete
     try {
       await this.components.screenshotCapture.takeScreenshot();
-      console.log(`📸 ${timestamp()} [STEP-3] Screenshot captured successfully! (${Date.now() - screenshotStart}ms)`);
       
       // Additional wait to ensure screenshot processing is complete
-      console.log(`📸 ${timestamp()} [STEP-3] Waiting 300ms for screenshot processing...`);
-      const processStart = Date.now();
       await new Promise(resolve => setTimeout(resolve, 300));
-      console.log(`📸 ${timestamp()} [STEP-3] Screenshot processing complete! (${Date.now() - processStart}ms)`);
     } catch (error) {
-      console.error(`❌ ${timestamp()} [STEP-3] Error taking screenshot:`, error);
+      console.error('Error taking screenshot:', error);
       this.hideScreenshotLoadingIndicator();
       return;
     }
     
-    // Step 4: Hide loading indicator
-    console.log(`📸 ${timestamp()} [STEP-4] Hiding screenshot loading indicator...`);
+    // Hide loading indicator
     this.hideScreenshotLoadingIndicator();
-    console.log(`📸 ${timestamp()} [STEP-4] Loading indicator hidden`);
     
-    // Step 5: NOW show the modal
-    console.log(`🔧 ${timestamp()} [STEP-5] Now showing modal with captured screenshot...`);
-
-    console.log(`🔧 ${timestamp()} [STEP-5] Setting isVisible = true`);
+    // Show the modal
     this.isVisible = true;
     
     // Store original body and html styles before any modifications
-    console.log(`🔧 ${timestamp()} [STEP-5] Storing original body/html styles...`);
     this.originalBodyStyles = document.body.getAttribute('style') || '';
     this.originalHtmlStyles = document.documentElement.getAttribute('style') || '';
-    console.log(`🔧 ${timestamp()} [STEP-5] Original styles stored`);
     
     // Apply minimal body styles - only prevent scrolling, don't change layout
-    console.log(`🔧 ${timestamp()} [STEP-5] Applying body styles (overflow hidden)...`);
     const currentBodyStyle = document.body.getAttribute('style') || '';
     document.body.setAttribute('style', currentBodyStyle + '; overflow: hidden !important;');
-    console.log(`🔧 ${timestamp()} [STEP-5] Body styles applied`);
-    
-    // Modal container - Clean overlay approach
-    console.log(`🔧 ${timestamp()} [STEP-5] Applying modal overlay styles...`);
-    const modalStyleStart = Date.now();
     this.modalElement.style.cssText = `
       position: fixed !important;
       top: 0 !important;
@@ -330,18 +609,9 @@ export default class VisualFeedbackModal {
       pointer-events: auto !important;
       box-sizing: border-box !important;
     `;
-    console.log(`🔧 ${timestamp()} [STEP-5] Modal overlay styles applied (${Date.now() - modalStyleStart}ms)`);
-    
-    const modalRect = this.modalElement.getBoundingClientRect();
-    console.log(`🔧 ${timestamp()} [STEP-5] Modal rect:`, {
-      x: modalRect.x,
-      y: modalRect.y, 
-      width: modalRect.width,
-      height: modalRect.height
-    });
     
     // Content container - Fuller screen modal window
-    console.log(`🔧 ${timestamp()} [STEP-5] Styling content container...`);
+
     const contentContainer = this.modalElement.querySelector('.visual-feedback-content');
     if (contentContainer) {
       const contentStyleStart = Date.now();
@@ -361,19 +631,12 @@ export default class VisualFeedbackModal {
         opacity: 1 !important;
         z-index: 10000000 !important;
       `;
-      console.log(`🔧 ${timestamp()} [STEP-5] Content container styled (${Date.now() - contentStyleStart}ms)`);
-      
+
       const contentRect = contentContainer.getBoundingClientRect();
-      console.log(`🔧 ${timestamp()} [STEP-5] Content container rect:`, {
-        x: contentRect.x,
-        y: contentRect.y,
-        width: contentRect.width,
-        height: contentRect.height
-      });
     }
     
     // Ensure the modal body can expand to fill available space
-    console.log(`🔧 ${timestamp()} [STEP-5] Styling modal body...`);
+
     const modalBody = this.modalElement.querySelector('.visual-feedback-body');
     if (modalBody) {
       modalBody.style.cssText = `
@@ -382,19 +645,16 @@ export default class VisualFeedbackModal {
         flex-direction: column !important;
         overflow: hidden !important;
       `;
-      console.log(`🔧 ${timestamp()} [STEP-5] Modal body styled`);
+
     }
     
     // Show loading screen
-    console.log(`🔧 ${timestamp()} [STEP-5] Finding loading and main elements...`);
+
     const loadingElement = this.modalElement.querySelector('#screenshotLoading');
     const mainElement = this.modalElement.querySelector('#feedbackMain');
-    
-    console.log(`🔧 ${timestamp()} [STEP-5] Loading element found:`, !!loadingElement);
-    console.log(`🔧 ${timestamp()} [STEP-5] Main element found:`, !!mainElement);
-    
+
     if (loadingElement) {
-      console.log(`🔧 ${timestamp()} [STEP-5] Styling loading element (show)...`);
+
       loadingElement.style.cssText = `
         display: flex !important;
         flex-direction: column !important;
@@ -403,43 +663,43 @@ export default class VisualFeedbackModal {
         flex: 1 !important;
         text-align: center !important;
       `;
-      console.log(`🔧 ${timestamp()} [STEP-5] Loading element styled for visibility`);
+
     }
     if (mainElement) {
-      console.log(`🔧 ${timestamp()} [STEP-5] Styling main element (hide)...`);
+
       mainElement.style.cssText = `
         display: none !important;
         flex: 1 !important;
         flex-direction: row !important;
         overflow: hidden !important;
       `;
-      console.log(`🔧 ${timestamp()} [STEP-5] Main element styled for hiding`);
+
     }
 
     try {
-      console.log(`🔧 ${timestamp()} [STEP-6] ========== COMPONENT INITIALIZATION ==========`);
-      
+
       // Initialize system info
-      console.log(`🔧 ${timestamp()} [STEP-6] Gathering system info...`);
+
       const systemInfoStart = Date.now();
       const systemInfo = await this.components.systemInfo.gather();
-      console.log(`🔧 ${timestamp()} [STEP-6] System info gathered (${Date.now() - systemInfoStart}ms)`);
+
+      // Cache system info for use in tabs
+      this.cachedSystemInfo = systemInfo;
       
       // Initialize chat with system info
-      console.log(`🔧 ${timestamp()} [STEP-6] Initializing chat interface...`);
+
       const chatInitStart = Date.now();
       this.components.chatInterface.initialize(systemInfo);
-      console.log(`🔧 ${timestamp()} [STEP-6] Chat interface initialized (${Date.now() - chatInitStart}ms)`);
-      
+
             // Hide loading and show main content
-      console.log(`🔧 ${timestamp()} [STEP-7] ========== SWITCHING TO MAIN CONTENT ==========`);
+
       if (loadingElement) {
-        console.log(`🔧 ${timestamp()} [STEP-7] Hiding loading element...`);
+
         loadingElement.style.display = 'none';
-        console.log(`🔧 ${timestamp()} [STEP-7] Loading element hidden`);
+
       }
       if (mainElement) {
-        console.log(`🔧 ${timestamp()} [STEP-7] Showing main content...`);
+
         const mainShowStart = Date.now();
         mainElement.style.cssText = `
           display: flex !important;
@@ -447,44 +707,30 @@ export default class VisualFeedbackModal {
           flex-direction: row !important;
           overflow: hidden !important;
         `;
-        console.log(`🔧 ${timestamp()} [STEP-7] Main content shown (${Date.now() - mainShowStart}ms)`);
-        
+
         const mainRect = mainElement.getBoundingClientRect();
-        console.log(`🔧 ${timestamp()} [STEP-7] Main element rect:`, {
-          x: mainRect.x,
-          y: mainRect.y,
-          width: mainRect.width,
-          height: mainRect.height
-        });
       }
-      
-      console.log(`🔧 ${timestamp()} [STEP-7] Modal layout should now be fully visible and stable`);
 
       // NOW the modal layout is complete - time to scale and center the canvas!
-      console.log(`🎯 ${timestamp()} [STEP-8] ========== CANVAS SCALING & CENTERING ==========`);
-      console.log(`🎯 ${timestamp()} [STEP-8] Modal layout complete, now scaling canvas to fit container...`);
-      
+
       // Give the layout a moment to stabilize, then center the canvas
       await new Promise(resolve => setTimeout(resolve, 50));
       
       if (this.components.screenshotCapture) {
         this.components.screenshotCapture.centerCanvasWhenReady();
-        console.log(`🎯 ${timestamp()} [STEP-8] Canvas scaling and centering initiated`);
+
       } else {
-        console.log(`🎯 ${timestamp()} [STEP-8] Screenshot capture component not available`);
+
       }
-      
-      console.log(`🎯 ${timestamp()} [STEP-8] ========== CANVAS SCALING & CENTERING COMPLETE ==========`);
-      
+
       // Trigger callback
-      console.log(`🎯 ${timestamp()} [STEP-9] ========== FINAL COMPLETION ==========`);
+
       if (this.options.onOpen) {
-        console.log(`🎯 ${timestamp()} [STEP-9] Triggering onOpen callback...`);
+
         this.options.onOpen();
-        console.log(`🎯 ${timestamp()} [STEP-9] onOpen callback completed`);
+
       }
-      
-      console.log(`🎯 ${timestamp()} [STEP-9] ========== MODAL SHOW PROCESS COMPLETE ==========`);
+
     } catch (error) {
       console.error('Error showing visual feedback modal:', error);
       this.hide();
@@ -714,6 +960,140 @@ Thank you for your detailed feedback!`);
 
   handleLogsCaptured(logs) {
     // Handle logs captured
+  }
+
+  /**
+   * Collect and log comprehensive feedback data for API submission
+   */
+  collectAndLogFeedbackData() {
+    try {
+      // Get screenshot data URL from canvas
+      const screenshot = this.getScreenshotData();
+      
+      // Get system info
+      const systemInfo = this.cachedSystemInfo || {};
+      
+      // Get console logs
+      const consoleLogs = this.components.consoleLogger ? this.components.consoleLogger.getLogs() : [];
+      
+      // Get network logs  
+      const networkLogs = this.components.consoleLogger ? this.components.consoleLogger.getNetworkLogs() : [];
+      
+      // Get chat messages
+      const chatMessages = this.getChatMessages();
+      
+      // Build comprehensive feedback JSON
+      const feedbackData = {
+        timestamp: new Date().toISOString(),
+        screenshot: {
+          dataUrl: screenshot,
+          timestamp: new Date().toISOString()
+        },
+        systemInfo: {
+          browser: systemInfo.browser || 'Unknown',
+          browserVersion: systemInfo.browserVersion || 'Unknown',
+          os: systemInfo.os || 'Unknown',
+          osVersion: systemInfo.osVersion || 'Unknown',
+          screenResolution: systemInfo.screenResolution || 'Unknown',
+          viewport: systemInfo.viewport || 'Unknown',
+          userAgent: systemInfo.userAgent || navigator.userAgent,
+          language: systemInfo.language || 'Unknown',
+          timezone: systemInfo.timezone || 'Unknown',
+          cookiesEnabled: systemInfo.cookiesEnabled || false,
+          onlineStatus: systemInfo.onlineStatus || false,
+          referrer: systemInfo.referrer || '',
+          url: systemInfo.url || window.location.href
+        },
+        consoleLogs: consoleLogs.map(log => ({
+          level: log.level,
+          message: log.message,
+          timestamp: log.timestamp,
+          stack: log.stack || null
+        })),
+        networkLogs: networkLogs.map(log => ({
+          method: log.method,
+          url: log.url,
+          status: log.status,
+          statusText: log.statusText,
+          timestamp: log.timestamp,
+          duration: log.duration,
+          size: log.size,
+          type: log.type,
+          error: log.error || null,
+          curlCommand: log.curlCommand || null
+        })),
+        chat: {
+          messages: chatMessages,
+          messageCount: chatMessages.length
+        },
+        metadata: {
+          feedbackVersion: '1.0.0',
+          widgetVersion: '1.0.0',
+          submissionId: this.generateSubmissionId()
+        }
+      };
+
+      // Console log the complete feedback data
+      console.log('🚀 FEEDBACK DATA READY FOR API SUBMISSION:');
+      console.log(JSON.stringify(feedbackData, null, 2));
+      
+      // Also log a summary
+      console.log('📊 FEEDBACK SUMMARY:');
+      console.log(`- Screenshot: ${screenshot ? 'Captured' : 'Missing'}`);
+      console.log(`- System Info: ${Object.keys(systemInfo).length} properties`);
+      console.log(`- Console Logs: ${consoleLogs.length} entries`);  
+      console.log(`- Network Logs: ${networkLogs.length} requests`);
+      console.log(`- Chat Messages: ${chatMessages.length} messages`);
+      
+      return feedbackData;
+      
+    } catch (error) {
+      console.error('❌ Error collecting feedback data:', error);
+      return null;
+    }
+  }
+
+  getScreenshotData() {
+    try {
+      const canvas = this.modalElement.querySelector('#screenshotCanvas');
+      if (canvas) {
+        return canvas.toDataURL('image/png');
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting screenshot data:', error);
+      return null;
+    }
+  }
+
+  getChatMessages() {
+    try {
+      if (this.components.chatInterface && this.components.chatInterface.getMessages) {
+        return this.components.chatInterface.getMessages();
+      }
+      
+      // Fallback: extract messages from DOM  
+      const messages = [];
+      const messageElements = this.chatTab ? this.chatTab.querySelectorAll('.message') : [];
+      messageElements.forEach(element => {
+        const isUser = element.classList.contains('user');
+        const messageText = element.querySelector('.message-content')?.textContent || element.textContent;
+        messages.push({
+          type: isUser ? 'user' : 'ai',
+          content: messageText.trim(),
+          timestamp: new Date().toISOString()
+        });
+      });
+      
+      return messages;
+    } catch (error) {
+      console.error('Error getting chat messages:', error);
+      return [];
+    }
+  }
+
+  generateSubmissionId() {
+    return 'feedback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   }
 
   /**

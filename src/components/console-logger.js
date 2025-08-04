@@ -349,8 +349,7 @@ export default class ConsoleLogger {
   restoreNetworkRequests() {
     // Note: In a real implementation, you would need to store and restore the original fetch and XMLHttpRequest
     // For now, we'll just note that they should be restored
-    console.log('Network request interceptors should be restored here');
-  }
+    }
 
   /**
    * Restore original error handlers
