@@ -1,0 +1,675 @@
+/**
+ * Login Form Component Styles - Clean Portal Design
+ */
+
+.visual-feedback-modal .login-card {
+  width: 100% !important;
+  max-width: 28rem !important;
+  margin: 0 auto !important;
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  position: relative !important;
+  z-index: 1001 !important;
+  overflow: hidden !important;
+  animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .visual-feedback-modal .login-card {
+    background: #1f2937 !important;
+    border-color: #374151 !important;
+    color: #f9fafb !important;
+  }
+}
+
+.visual-feedback-modal .login-header {
+  text-align: center !important;
+  padding: 1.5rem 1.5rem 0 1.5rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.visual-feedback-modal .login-logo {
+  margin: 0 auto 1.5rem auto !important;
+  width: 4rem !important;
+  height: 4rem !important;
+  background: #3b82f6 !important;
+  border-radius: 0.75rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  animation: fadeInScale 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  animation-delay: 0.1s !important;
+  animation-fill-mode: both !important;
+
+  .logo-icon {
+    width: 2rem !important;
+    height: 2rem !important;
+    color: #ffffff !important;
+  }
+}
+
+.visual-feedback-modal .login-title {
+  h1 {
+    margin: 0 0 0.5rem 0 !important;
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    color: #111827 !important;
+    line-height: 1.25 !important;
+  }
+
+  p {
+    margin: 0 !important;
+    font-size: 0.875rem !important;
+    color: #6b7280 !important;
+    line-height: 1.4 !important;
+  }
+}
+
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Dark mode for header */
+@media (prefers-color-scheme: dark) {
+  .visual-feedback-modal .login-title h1 {
+    color: #f9fafb !important;
+  }
+  
+  .visual-feedback-modal .login-title p {
+    color: #d1d5db !important;
+  }
+}
+
+.visual-feedback-modal .login-error {
+  margin: 0 1.5rem 1.5rem 1.5rem !important;
+  padding: 0.75rem 1rem !important;
+  background: #fef2f2 !important;
+  border: 1px solid #fecaca !important;
+  border-radius: 0.375rem !important;
+  animation: fadeIn 0.3s ease-out !important;
+
+  .error-content {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+  }
+
+  .error-icon {
+    width: 1rem !important;
+    height: 1rem !important;
+    color: #dc2626 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .error-message {
+    flex: 1 !important;
+    font-size: 0.875rem !important;
+    color: #dc2626 !important;
+    font-weight: 500 !important;
+  }
+
+  &.shake {
+    animation: shake 0.5s ease-in-out, fadeIn 0.3s ease-out !important;
+  }
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(-4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Dark mode for error */
+@media (prefers-color-scheme: dark) {
+  .visual-feedback-modal .login-error {
+    background: #7f1d1d !important;
+    border-color: #991b1b !important;
+    
+    .error-icon {
+      color: #fca5a5 !important;
+    }
+    
+    .error-message {
+      color: #fca5a5 !important;
+    }
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.visual-feedback-modal .login-form {
+  padding: 0 1.5rem 1.5rem 1.5rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1rem !important;
+}
+
+.visual-feedback-modal .form-field {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.5rem !important;
+
+  .field-label {
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    color: #374151 !important;
+    margin: 0 !important;
+  }
+
+  .field-input {
+    height: 2.5rem !important;
+    padding: 0.5rem 0.75rem !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 0.375rem !important;
+    background: #ffffff !important;
+    font-size: 0.875rem !important;
+    color: #111827 !important;
+    transition: all 0.2s ease-in-out !important;
+    position: relative !important;
+    z-index: 10 !important;
+    pointer-events: auto !important;
+    
+    &:focus {
+      outline: 2px solid #3b82f6 !important;
+      outline-offset: 2px !important;
+      border-color: #3b82f6 !important;
+    }
+    
+    &:disabled {
+      background: #f9fafb !important;
+      color: #9ca3af !important;
+      cursor: not-allowed !important;
+    }
+    
+    &::placeholder {
+      color: #9ca3af !important;
+    }
+  }
+}
+
+.visual-feedback-modal .password-field {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+
+  .password-input {
+    padding-right: 2.5rem !important;
+    // Ensure password input inherits all field-input styles
+    height: 2.5rem !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    padding-left: 0.75rem !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 0.375rem !important;
+    background: #ffffff !important;
+    font-size: 0.875rem !important;
+    color: #111827 !important;
+    transition: all 0.2s ease-in-out !important;
+    position: relative !important;
+    z-index: 1 !important;
+    width: 100% !important;
+    
+    &:focus {
+      outline: 2px solid #3b82f6 !important;
+      outline-offset: 2px !important;
+      border-color: #3b82f6 !important;
+    }
+    
+    &:disabled {
+      background: #f9fafb !important;
+      color: #9ca3af !important;
+      cursor: not-allowed !important;
+    }
+    
+    &::placeholder {
+      color: #9ca3af !important;
+    }
+  }
+
+  .password-toggle {
+    position: absolute !important;
+    right: 0 !important;
+    top: 0 !important;
+    height: 2.5rem !important;
+    width: 2.5rem !important;
+    border: none !important;
+    background: transparent !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 0.375rem !important;
+    transition: background-color 0.2s ease-in-out !important;
+    z-index: 2 !important;
+    pointer-events: auto !important;
+    
+    &:hover {
+      background: #f3f4f6 !important;
+    }
+    
+    &:focus {
+      outline: 2px solid #3b82f6 !important;
+      outline-offset: 2px !important;
+    }
+    
+    .eye-icon {
+      width: 1rem !important;
+      height: 1rem !important;
+      color: #6b7280 !important;
+      stroke: currentColor !important;
+    }
+  }
+}
+
+/* Visual Feedback Modal specific overrides */
+.visual-feedback-modal .password-toggle .eye-icon {
+  color: #6b7280 !important;
+  stroke: currentColor !important;
+}
+
+/* Dark mode for form */
+@media (prefers-color-scheme: dark) {
+  .visual-feedback-modal .form-field .field-label {
+    color: #f3f4f6 !important;
+  }
+  
+  .visual-feedback-modal .form-field .field-input {
+    background: #374151 !important;
+    border-color: #4b5563 !important;
+    color: #f9fafb !important;
+    
+    &:focus {
+      border-color: #3b82f6 !important;
+    }
+    
+    &:disabled {
+      background: #2d3748 !important;
+      color: #9ca3af !important;
+    }
+    
+    &::placeholder {
+      color: #9ca3af !important;
+    }
+  }
+  
+  .visual-feedback-modal .password-field .password-input {
+    background: #374151 !important;
+    border-color: #4b5563 !important;
+    color: #f9fafb !important;
+    
+    &:focus {
+      border-color: #3b82f6 !important;
+      outline-color: #3b82f6 !important;
+    }
+    
+    &:disabled {
+      background: #2d3748 !important;
+      color: #9ca3af !important;
+    }
+    
+    &::placeholder {
+      color: #9ca3af !important;
+    }
+  }
+  
+  .visual-feedback-modal .password-toggle {
+    &:hover {
+      background: #4b5563 !important;
+    }
+    
+    .eye-icon {
+      color: #d1d5db !important;
+      stroke: currentColor !important;
+    }
+  }
+}
+
+.visual-feedback-modal .form-actions {
+  display: flex !important;
+  gap: 0.75rem !important;
+  margin-top: 1.5rem !important;
+
+  .btn {
+    flex: 1 !important;
+    height: 2.5rem !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 0.375rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease-in-out !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+    border: 1px solid transparent !important;
+
+    &:disabled {
+      opacity: 0.5 !important;
+      cursor: not-allowed !important;
+    }
+
+    &:focus {
+      outline: 2px solid #3b82f6 !important;
+      outline-offset: 2px !important;
+    }
+  }
+
+  .btn-secondary {
+    background: #ffffff !important;
+    color: #374151 !important;
+    border-color: #d1d5db !important;
+
+    &:hover:not(:disabled) {
+      background: #f9fafb !important;
+      border-color: #9ca3af !important;
+    }
+  }
+
+  .btn-primary {
+    background: #3b82f6 !important;
+    color: #ffffff !important;
+
+    &:hover:not(:disabled) {
+      background: #2563eb !important;
+    }
+
+    .btn-content {
+      display: flex !important;
+      align-items: center !important;
+      gap: 0.5rem !important;
+    }
+
+    .btn-icon {
+      width: 1rem !important;
+      height: 1rem !important;
+    }
+
+    .btn-loading {
+      display: none !important;
+      align-items: center !important;
+      gap: 0.5rem !important;
+    }
+
+    &:disabled .btn-content {
+      display: none !important;
+    }
+
+    &:disabled .btn-loading {
+      display: flex !important;
+    }
+
+    .loading-spinner {
+      width: 1rem !important;
+      height: 1rem !important;
+      border: 2px solid rgba(255, 255, 255, 0.3) !important;
+      border-top: 2px solid #ffffff !important;
+      border-radius: 50% !important;
+      animation: spin 1s linear infinite !important;
+    }
+  }
+}
+
+/* Dark mode for buttons */
+@media (prefers-color-scheme: dark) {
+  .visual-feedback-modal .btn-secondary {
+    background: #374151 !important;
+    color: #f9fafb !important;
+    border-color: #4b5563 !important;
+
+    &:hover:not(:disabled) {
+      background: #4b5563 !important;
+      border-color: #6b7280 !important;
+    }
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.visual-feedback-modal .login-footer {
+  padding: 1rem 1.5rem 1.5rem 1.5rem !important;
+  text-align: center !important;
+  border-top: 1px solid #f3f4f6 !important;
+
+  p {
+    margin: 0 !important;
+    font-size: 0.75rem !important;
+    color: #9ca3af !important;
+    line-height: 1.4 !important;
+  }
+}
+
+/* Dark mode for footer */
+@media (prefers-color-scheme: dark) {
+  .visual-feedback-modal .login-footer {
+    border-top-color: #374151 !important;
+    
+    p {
+      color: #9ca3af !important;
+    }
+  }
+}
+
+// Login Screen Backdrop - Clean Portal Style
+.visual-feedback-modal .login-screen {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: linear-gradient(to bottom right, #f9fafb, #ffffff, #f9fafb) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 2rem !important;
+  z-index: 1000 !important;
+  pointer-events: auto !important;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom right, rgba(249, 250, 251, 0.8), rgba(255, 255, 255, 0.5), rgba(249, 250, 251, 0.8));
+    pointer-events: none;
+  }
+}
+
+/* Dark mode for login screen */
+@media (prefers-color-scheme: dark) {
+  .visual-feedback-modal .login-screen {
+    background: linear-gradient(to bottom right, #0f172a, #1e293b, #0f172a) !important;
+    
+    &::before {
+      background: linear-gradient(to bottom right, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.5), rgba(15, 23, 42, 0.8));
+    }
+  }
+}
+
+// Enhanced Responsive Design
+@media (max-width: 480px) {
+  .visual-feedback-modal .login-card {
+    margin: 0.5rem !important;
+    max-width: calc(100% - 1rem) !important;
+  }
+
+  .visual-feedback-modal .login-header {
+    padding: 1rem 1rem 0 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .visual-feedback-modal .login-logo {
+    width: 3rem !important;
+    height: 3rem !important;
+    margin-bottom: 1rem !important;
+
+    .logo-icon {
+      width: 1.5rem !important;
+      height: 1.5rem !important;
+    }
+  }
+
+  .visual-feedback-modal .login-title {
+    h1 {
+      font-size: 1.25rem !important;
+    }
+
+    p {
+      font-size: 0.8125rem !important;
+    }
+  }
+
+  .visual-feedback-modal .login-form {
+    padding: 0 1rem 1rem 1rem !important;
+  }
+
+  .visual-feedback-modal .login-error {
+    margin: 0 1rem 1rem 1rem !important;
+  }
+
+  .visual-feedback-modal .login-footer {
+    padding: 0.75rem 1rem 1rem 1rem !important;
+  }
+
+  .visual-feedback-modal .form-actions {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+
+    .btn {
+      flex: none !important;
+    }
+  }
+
+  .visual-feedback-modal .login-screen {
+    padding: 0.5rem !important;
+  }
+}
+
+@media (max-width: 320px) {
+  .visual-feedback-modal .login-card {
+    margin: 0.25rem !important;
+    max-width: calc(100% - 0.5rem) !important;
+  }
+}
+
+// Header actions (signout button)
+.visual-feedback-modal .visual-feedback-header {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  
+  h3 {
+    color: #111827 !important;
+    text-shadow: none !important;
+  }
+  
+  .header-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+  }
+}
+
+.visual-feedback-modal .visual-feedback-close {
+  background: transparent !important;
+  color: #6b7280 !important;
+  font-size: 1.5rem !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 0.375rem !important;
+  
+  &:hover {
+    background: #f3f4f6 !important;
+    color: #374151 !important;
+    border-color: #9ca3af !important;
+  }
+}
+
+.visual-feedback-modal .visual-feedback-signout {
+  background: transparent !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 0.375rem !important;
+  padding: 0.25rem 0.5rem !important;
+  height: 2rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  font-size: 0.75rem !important;
+  color: #6b7280 !important;
+  transition: all 0.2s ease-in-out !important;
+  white-space: nowrap !important;
+  
+  &:hover {
+    background: #f3f4f6 !important;
+    border-color: #9ca3af !important;
+    color: #374151 !important;
+  }
+  
+  &:focus {
+    outline: 2px solid #3b82f6 !important;
+    outline-offset: 2px !important;
+  }
+}
+
+// Dark mode styles
+@media (prefers-color-scheme: dark) {
+  .visual-feedback-modal .visual-feedback-header {
+    background: #1f2937 !important;
+    border-bottom-color: #374151 !important;
+    
+    h3 {
+      color: #f9fafb !important;
+    }
+  }
+  
+  .visual-feedback-modal .visual-feedback-close {
+    color: #d1d5db !important;
+    border-color: #4b5563 !important;
+    
+    &:hover {
+      background: #374151 !important;
+      color: #f3f4f6 !important;
+      border-color: #6b7280 !important;
+    }
+  }
+  
+  .visual-feedback-modal .visual-feedback-signout {
+    border-color: #4b5563 !important;
+    color: #9ca3af !important;
+    
+    &:hover {
+      background: #374151 !important;
+      border-color: #6b7280 !important;
+      color: #d1d5db !important;
+    }
+  }
+}

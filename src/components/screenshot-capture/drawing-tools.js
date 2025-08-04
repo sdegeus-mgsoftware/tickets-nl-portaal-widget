@@ -100,6 +100,18 @@ export default class DrawingTools {
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
+      // Don't intercept keys when user is typing in form fields
+      const activeElement = document.activeElement;
+      const isInputField = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.contentEditable === 'true'
+      );
+      
+      if (isInputField) {
+        return; // Let the input field handle the key
+      }
+      
       if (e.ctrlKey && e.key === 'z') {
         e.preventDefault();
         this.handleAction('undo');

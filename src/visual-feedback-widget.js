@@ -12,6 +12,8 @@ import './styles/main.scss';
 const DEFAULT_CONFIG = {
   // API Configuration
   apiEndpoint: '/api/feedback',
+  apiUrl: 'https://example.com/api', // Configure this with your actual API URL
+  projectId: null, // Required: Your project ID
   apiKey: null,
   
   // Widget Behavior
@@ -61,9 +63,8 @@ const DEFAULT_CONFIG = {
  */
 export default class VisualFeedbackWidget {
   constructor(config = {}) {
-    console.log('🔍 [DEBUG] VisualFeedbackWidget v1.0.0-debug initialized');
-    
     this.config = { ...DEFAULT_CONFIG, ...config };
+    
     this.modal = null;
     this.triggerButton = null;
     this.isInitialized = false;
@@ -116,7 +117,6 @@ export default class VisualFeedbackWidget {
     if (this.isInitialized || this.isDestroyed) return;
     
     // Create modal component
-    console.log('🔧 [WIDGET] Creating modal component...');
     this.modal = new VisualFeedbackModal({
       ...this.config,
       onOpen: this.handleModalOpen.bind(this),
@@ -124,7 +124,6 @@ export default class VisualFeedbackWidget {
       onSubmit: this.handleModalSubmit.bind(this),
       onError: this.handleModalError.bind(this)
     });
-    console.log('🔧 [WIDGET] Modal component created:', !!this.modal);
     
     // Create trigger button if enabled
     if (this.config.showTriggerButton) {
@@ -149,10 +148,7 @@ export default class VisualFeedbackWidget {
    * Create the trigger button
    */
   createTriggerButton() {
-    console.log('🔘 [BUTTON] Creating trigger button...');
-    
     if (this.triggerButton) {
-      console.log('🔘 [BUTTON] Button already exists');
       return;
     }
     
@@ -162,12 +158,8 @@ export default class VisualFeedbackWidget {
     this.triggerButton.setAttribute('aria-label', this.config.ariaLabel);
     this.triggerButton.style.cssText = this.getTriggerButtonStyles();
     
-    console.log('🔘 [BUTTON] Button created with text:', this.config.triggerButtonText);
-    console.log('🔘 [BUTTON] Button styles:', this.getTriggerButtonStyles());
-    
     // Add click handler
     this.triggerButton.addEventListener('click', () => {
-      console.log('🔘 [BUTTON] Trigger button clicked!');
       
       // Disable and hide button immediately to prevent double-clicks and screenshots
       this.disableTriggerButton();
@@ -177,8 +169,7 @@ export default class VisualFeedbackWidget {
     });
     
     // Add to page
-    document.body.appendChild(this.triggerButton);
-    console.log('🔘 [BUTTON] Button added to page');
+    document.body.appendChild(this.triggerButton);    
   }
   
   /**
@@ -207,10 +198,8 @@ export default class VisualFeedbackWidget {
         button.disabled = true;
         button.style.opacity = '0.5';
         button.style.cursor = 'not-allowed';
-        console.log(`🔘 [BUTTON] Help button ${index + 1} disabled`);
       }
     });
-    console.log(`🔘 [BUTTON] All ${helpButtons.length} widget buttons disabled`);
   }
 
   /**
@@ -224,10 +213,8 @@ export default class VisualFeedbackWidget {
         button.disabled = false;
         button.style.opacity = '1';
         button.style.cursor = 'pointer';
-        console.log(`🔘 [BUTTON] Help button ${index + 1} enabled`);
       }
     });
-    console.log(`🔘 [BUTTON] All ${helpButtons.length} widget buttons enabled`);
   }
 
   /**
@@ -239,10 +226,8 @@ export default class VisualFeedbackWidget {
     helpButtons.forEach((button, index) => {
       if (button) {
         button.style.display = 'none';
-        console.log(`🔘 [BUTTON] Help button ${index + 1} hidden`);
       }
     });
-    console.log(`🔘 [BUTTON] All ${helpButtons.length} widget buttons hidden`);
   }
 
   /**
@@ -254,10 +239,8 @@ export default class VisualFeedbackWidget {
     helpButtons.forEach((button, index) => {
       if (button) {
         button.style.display = 'block';
-        console.log(`🔘 [BUTTON] Help button ${index + 1} shown`);
       }
     });
-    console.log(`🔘 [BUTTON] All ${helpButtons.length} widget buttons shown`);
   }
   
   /**
@@ -277,16 +260,10 @@ export default class VisualFeedbackWidget {
    * Open the feedback modal
    */
   open() {
-    console.log('🔓 [WIDGET] open() method called');
-    console.log('🔓 [WIDGET] isDestroyed:', this.isDestroyed);
-    console.log('🔓 [WIDGET] modal exists:', !!this.modal);
-    
     if (this.isDestroyed || !this.modal) {
-      console.log('🔓 [WIDGET] Cannot open - widget destroyed or modal missing');
       return;
     }
     
-    console.log('🔓 [WIDGET] Calling modal.show()');
     this.modal.show();
   }
   
@@ -354,7 +331,7 @@ export default class VisualFeedbackWidget {
     }
     
     if (this.config.debugMode) {
-      console.log('VisualFeedbackWidget: Config updated:', this.config);
+  
     }
   }
   
@@ -374,7 +351,7 @@ export default class VisualFeedbackWidget {
     }
     
     if (this.config.debugMode) {
-      console.log('VisualFeedbackWidget: Modal opened');
+  
     }
   }
   
@@ -391,7 +368,7 @@ export default class VisualFeedbackWidget {
     }
     
     if (this.config.debugMode) {
-      console.log('VisualFeedbackWidget: Modal closed');
+  
     }
   }
   
@@ -404,7 +381,7 @@ export default class VisualFeedbackWidget {
     }
     
     if (this.config.debugMode) {
-      console.log('VisualFeedbackWidget: Feedback submitted:', data);
+  
     }
   }
   
@@ -543,7 +520,7 @@ export default class VisualFeedbackWidget {
     }
     
     if (this.config.debugMode) {
-      console.log('VisualFeedbackWidget: Reset');
+  
     }
   }
   
@@ -576,7 +553,7 @@ export default class VisualFeedbackWidget {
     this.isInitialized = false;
     
     if (this.config.debugMode) {
-      console.log('VisualFeedbackWidget: Destroyed');
+  
     }
   }
 }

@@ -8,15 +8,18 @@ import StepReplication from './step-replication.js';
 import ChatInterface from './chat-interface.js';
 import SystemInfo from './system-info.js';
 import ConsoleLogger from './console-logger.js';
+import LoginForm from './login-form.js';
+import { AuthClient } from '../utils/auth-client.js';
 
 export default class VisualFeedbackModal {
-  constructor(options = {}) {
+  constructor(options = {}) {    
     this.options = {
       apiEndpoint: '/api/feedback',
       theme: 'default',
       enableScreenRecording: true,
       enableConsoleLogging: true,
       enableNetworkLogging: true,
+      apiUrl: 'https://example.com/api', // Configure this with your actual API URL
       onOpen: null,
       onClose: null,
       onSubmit: null,
@@ -29,6 +32,11 @@ export default class VisualFeedbackModal {
     this.floatingButton = null;
     this.modalElement = null;
     this.floatingStopButton = null;
+    
+    // Authentication
+    this.authClient = new AuthClient(this.options.apiUrl);
+    this.isAuthenticated = false;
+    this.authUnsubscribe = null;
     
     // Store original styles to restore later
     this.originalBodyStyles = null;
@@ -58,20 +66,30 @@ export default class VisualFeedbackModal {
     this.modalElement.id = 'visualFeedbackModal';
     this.modalElement.style.display = 'none';
 
-    // Create modal content
+    // Create modal content with login screen
     this.modalElement.innerHTML = `
       <div class="visual-feedback-content">
         <div class="visual-feedback-header">
           <h3>Visual Feedback</h3>
-          <button class="visual-feedback-close" id="vfwCloseBtn">×</button>
+          <div class="header-actions">
+                                <button class="visual-feedback-signout" id="vfwSignoutBtn" style="display: none;" title="Sign out">Sign out</button>
+            <button class="visual-feedback-close" id="vfwCloseBtn">×</button>
+          </div>
         </div>
         
         <div class="visual-feedback-body">
+          <!-- Login Screen -->
+          <div class="login-screen" id="loginScreen" style="display: none;">
+            <!-- Login form will be injected here -->
+          </div>
+          
+          <!-- Loading Screen -->
           <div class="screenshot-loading" id="screenshotLoading">
             <div class="loading-spinner"></div>
             <p id="loadingText">Preparing to capture...</p>
           </div>
           
+          <!-- Main Feedback Interface -->
           <div class="feedback-main" id="feedbackMain" style="display: none;">
             <div class="screenshot-panel" id="screenshotPanel">
               <!-- Screenshot capture component will be injected here -->
@@ -124,19 +142,26 @@ export default class VisualFeedbackModal {
    * Initialize all sub-components
    */
   initializeComponents() {
+    const loginScreen = this.modalElement.querySelector('#loginScreen');
     const screenshotPanel = this.modalElement.querySelector('#screenshotPanel');
     const chatTab = this.modalElement.querySelector('#chatTab');
     const systemTab = this.modalElement.querySelector('#systemTab');
     const consoleTab = this.modalElement.querySelector('#consoleTab');
     const networkTab = this.modalElement.querySelector('#networkTab');
 
+    // Initialize login form
+    this.components.loginForm = new LoginForm({
+      container: loginScreen,
+      apiUrl: this.options.apiUrl,
+      onLogin: this.handleLogin.bind(this),
+      onCancel: this.hide.bind(this)
+    });
+
     // Initialize screenshot capture
     this.components.screenshotCapture = new ScreenshotCapture({
       container: screenshotPanel,
       onAnnotationChange: this.handleAnnotationChange.bind(this)
     });
-
-
 
     // Initialize chat interface
     this.components.chatInterface = new ChatInterface({
@@ -162,11 +187,189 @@ export default class VisualFeedbackModal {
     // Store network tab reference for network log rendering
     this.networkTab = networkTab;
 
+    // Setup authentication listener
+    this.setupAuthListener();
+
     // Setup global submit button
     this.setupGlobalSubmitButton();
 
     // Setup tab switching functionality
     this.setupTabSwitching();
+  }
+
+  /**
+   * Setup authentication state listener
+   */
+  setupAuthListener() {
+    this.authUnsubscribe = this.authClient.onStateChange((authState) => {
+      this.isAuthenticated = authState.isAuthenticated;
+
+      
+      if (this.isVisible && !authState.isAuthenticated) {
+        // Show login screen if user becomes unauthenticated while modal is open
+        this.showLoginScreen();
+      }
+    });
+
+    // Initialize auth client
+    this.authClient.initialize();
+  }
+
+  /**
+   * Handle login form submission
+   */
+  async handleLogin(credentials) {
+    try {
+      const result = await this.authClient.login(credentials);
+      
+      if (result.success) {
+
+        this.isAuthenticated = true;
+        
+        // Update auth state to notify components
+        this.authClient.currentState.isAuthenticated = true;
+        
+        // Hide login screen and proceed with normal flow
+        await this.proceedWithFeedbackCapture();
+        
+        return { success: true };
+      } else {
+        console.error('[VisualFeedbackModal] Login failed:', result.error);
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      console.error('[VisualFeedbackModal] Login error:', error);
+      return { success: false, error: 'An unexpected error occurred during login' };
+    }
+  }
+
+  /**
+   * Show login screen
+   */
+  showLoginScreen() {
+
+    const loginScreen = this.modalElement.querySelector('#loginScreen');
+    const loadingElement = this.modalElement.querySelector('#screenshotLoading');
+    const mainElement = this.modalElement.querySelector('#feedbackMain');
+
+    if (loginScreen) {
+      loginScreen.style.cssText = `
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+      `;
+    } else {
+    }
+
+    if (loadingElement) {
+      loadingElement.style.display = 'none';
+    }
+
+    if (mainElement) {
+      mainElement.style.cssText = `
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+      `;
+    } else {
+    }
+
+    // Focus on login form
+    if (this.components.loginForm) {
+      this.components.loginForm.focus();
+    }
+  }
+
+  /**
+   * Proceed with normal feedback capture flow after authentication
+   */
+  async proceedWithFeedbackCapture() {
+    const loginScreen = this.modalElement.querySelector('#loginScreen');
+    const loadingElement = this.modalElement.querySelector('#screenshotLoading');
+    const mainElement = this.modalElement.querySelector('#feedbackMain');
+
+    // Hide login screen completely
+    if (loginScreen) {
+      loginScreen.style.display = 'none';
+      loginScreen.style.visibility = 'hidden';
+      loginScreen.style.opacity = '0';
+      loginScreen.style.pointerEvents = 'none';
+
+    }
+
+    // Show loading while taking screenshot
+    if (loadingElement) {
+      loadingElement.style.display = 'flex';
+    }
+
+    try {
+      // Initialize system info
+      const systemInfo = await this.components.systemInfo.gather();
+      this.cachedSystemInfo = systemInfo;
+      
+      // Initialize chat with system info
+      this.components.chatInterface.initialize(systemInfo);
+
+      // Hide loading and show main content
+      if (loadingElement) {
+        loadingElement.style.display = 'none';
+      }
+      
+      if (mainElement) {
+        mainElement.style.cssText = `
+          display: flex !important;
+          flex: 1 !important;
+          flex-direction: row !important;
+          overflow: hidden !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          pointer-events: auto !important;
+        `;
+  
+      }
+
+      // Show signout button
+      const signoutBtn = this.modalElement.querySelector('#vfwSignoutBtn');
+      if (signoutBtn) {
+        signoutBtn.style.display = 'block';
+      }
+
+      // Center the canvas
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (this.components.screenshotCapture) {
+        this.components.screenshotCapture.centerCanvasWhenReady();
+      }
+
+    } catch (error) {
+      console.error('Error proceeding with feedback capture:', error);
+      this.showLoginScreen(); // Fall back to login screen
+    }
+  }
+
+  /**
+   * Handle signout
+   */
+  async handleSignout() {
+
+    
+    // Logout via auth client
+    await this.authClient.logout();
+    
+    // Update authentication state
+    this.isAuthenticated = false;
+    
+    // Hide signout button
+    const signoutBtn = this.modalElement.querySelector('#vfwSignoutBtn');
+    if (signoutBtn) {
+      signoutBtn.style.display = 'none';
+    }
+    
+    // Show login screen
+    this.showLoginScreen();
+    
+
   }
 
   /**
@@ -176,6 +379,10 @@ export default class VisualFeedbackModal {
     // Close button
     const closeBtn = this.modalElement.querySelector('#vfwCloseBtn');
     closeBtn.addEventListener('click', this.hide.bind(this));
+
+    // Signout button
+    const signoutBtn = this.modalElement.querySelector('#vfwSignoutBtn');
+    signoutBtn.addEventListener('click', this.handleSignout.bind(this));
 
     // Click outside to close
     this.modalElement.addEventListener('click', (e) => {
@@ -559,7 +766,20 @@ export default class VisualFeedbackModal {
       return;
     }
 
-    // Show temporary loading indicator on page BEFORE taking screenshot
+    // Check authentication first
+    const authState = this.authClient.getState();
+    
+    // If we think we're authenticated, validate the session
+    if (authState.isAuthenticated) {
+      const isValid = await this.authClient.validateSession();
+      this.isAuthenticated = isValid;
+    } else {
+      this.isAuthenticated = false;
+
+    }
+
+    // Always take screenshot immediately, regardless of authentication status
+
     this.showScreenshotLoadingIndicator();
     
     // Wait a moment for any animations to settle
@@ -677,58 +897,18 @@ export default class VisualFeedbackModal {
     }
 
     try {
-
-      // Initialize system info
-
-      const systemInfoStart = Date.now();
-      const systemInfo = await this.components.systemInfo.gather();
-
-      // Cache system info for use in tabs
-      this.cachedSystemInfo = systemInfo;
-      
-      // Initialize chat with system info
-
-      const chatInitStart = Date.now();
-      this.components.chatInterface.initialize(systemInfo);
-
-            // Hide loading and show main content
-
-      if (loadingElement) {
-
-        loadingElement.style.display = 'none';
-
-      }
-      if (mainElement) {
-
-        const mainShowStart = Date.now();
-        mainElement.style.cssText = `
-          display: flex !important;
-          flex: 1 !important;
-          flex-direction: row !important;
-          overflow: hidden !important;
-        `;
-
-        const mainRect = mainElement.getBoundingClientRect();
-      }
-
-      // NOW the modal layout is complete - time to scale and center the canvas!
-
-      // Give the layout a moment to stabilize, then center the canvas
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
-      if (this.components.screenshotCapture) {
-        this.components.screenshotCapture.centerCanvasWhenReady();
-
+      // Check authentication and show appropriate screen
+      if (this.isAuthenticated) {
+        // User is authenticated, proceed with normal flow
+        await this.proceedWithFeedbackCapture();
       } else {
-
+        // User is not authenticated, show login screen
+        this.showLoginScreen();
       }
 
       // Trigger callback
-
       if (this.options.onOpen) {
-
         this.options.onOpen();
-
       }
 
     } catch (error) {
@@ -1033,17 +1213,17 @@ Thank you for your detailed feedback!`);
         }
       };
 
-      // Console log the complete feedback data
-      console.log('🚀 FEEDBACK DATA READY FOR API SUBMISSION:');
-      console.log(JSON.stringify(feedbackData, null, 2));
-      
-      // Also log a summary
-      console.log('📊 FEEDBACK SUMMARY:');
-      console.log(`- Screenshot: ${screenshot ? 'Captured' : 'Missing'}`);
-      console.log(`- System Info: ${Object.keys(systemInfo).length} properties`);
-      console.log(`- Console Logs: ${consoleLogs.length} entries`);  
-      console.log(`- Network Logs: ${networkLogs.length} requests`);
-      console.log(`- Chat Messages: ${chatMessages.length} messages`);
+      // Debug logging if enabled
+      if (this.config.debugMode) {
+        console.log('🚀 FEEDBACK DATA READY FOR API SUBMISSION:');
+        console.log(JSON.stringify(feedbackData, null, 2));
+        console.log('📊 FEEDBACK SUMMARY:');
+        console.log(`- Screenshot: ${screenshot ? 'Captured' : 'Missing'}`);
+        console.log(`- System Info: ${Object.keys(systemInfo).length} properties`);
+        console.log(`- Console Logs: ${consoleLogs.length} entries`);  
+        console.log(`- Network Logs: ${networkLogs.length} requests`);
+        console.log(`- Chat Messages: ${chatMessages.length} messages`);
+      }
       
       return feedbackData;
       
@@ -1103,6 +1283,12 @@ Thank you for your detailed feedback!`);
     // Stop recording if active
     if (this.isRecording) {
       this.stopRecording();
+    }
+
+    // Clean up authentication listener
+    if (this.authUnsubscribe) {
+      this.authUnsubscribe();
+      this.authUnsubscribe = null;
     }
 
     // Clean up components

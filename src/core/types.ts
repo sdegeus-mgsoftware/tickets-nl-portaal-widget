@@ -1,7 +1,7 @@
 export interface WidgetConfig {
   // Required configuration
-  apiKey: string;
-  orgId: string;
+  // apiKey: string; // No longer needed with user authentication
+  projectId: string;
 
   // Optional configuration
   apiUrl?: string;
@@ -158,4 +158,39 @@ export interface AnalyticsEvent {
   userId?: string;
   sessionId: string;
   timestamp: number;
+}
+
+// Authentication interfaces
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  full_name?: string;
+  avatar_url?: string;
+  role?: string;
+}
+
+export interface AuthSession {
+  access_token: string;
+  refresh_token: string;
+  expires_at: number;
+  user: AuthUser;
+}
+
+export interface AuthState {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  user: AuthUser | null;
+  session: AuthSession | null;
+  error: string | null;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  data?: AuthSession;
+  error?: string;
 } 

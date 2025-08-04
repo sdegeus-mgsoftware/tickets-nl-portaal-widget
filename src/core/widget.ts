@@ -195,9 +195,11 @@ export class TicketWidget extends EventEmitter {
       this.state.isSubmitting = true;
       this.state.hasError = false;
 
-      // For now, just log the feedback data and show success
+      // For now, just log the feedback data and show success (debug mode only)
       // Later we'll integrate with proper API
-      console.log('Visual Feedback submitted:', data);
+      if (this.config.debugMode) {
+        console.log('Visual Feedback submitted:', data);
+      }
       
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000));

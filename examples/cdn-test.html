@@ -66,6 +66,10 @@
         }
     </style>
     <!-- Load the CDN files (DEVELOPMENT VERSION) -->
+    <!-- Load the widget configuration -->
+    <script src="config.js"></script>
+    
+    <!-- Load the widget from dist -->
     <link rel="stylesheet" href="/dist/visual-feedback-widget.css">
     <script src="/dist/visual-feedback-widget.js"></script>
 </head>
@@ -95,7 +99,6 @@
         </div>
         
         <div class="test-buttons">
-            <button onclick="initializeWidget()">🚀 Initialize Widget</button>
             <button onclick="showWidget()">📸 Show Widget</button>
             <button onclick="testScreenshot()">🖼️ Test Screenshot</button>
             <button onclick="testRecording()">🎥 Test Recording</button>
@@ -121,50 +124,46 @@
             const statusText = document.getElementById('status-text');
             statusText.textContent = message;
             statusDiv.className = `status ${type}`;
-        }
+        };
         
-        function clearLog() {
+        window.clearLog = function() {
             document.getElementById('log').innerHTML = '';
-        }
+        };
         
-        // Check if widget is available
+        // Check if widget is available and auto-initialize
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof VisualFeedbackWidget !== 'undefined') {
                 updateStatus('Widget loaded successfully!', 'success');
                 log('✅ VisualFeedbackWidget is available');
                 log('🔧 Widget constructor: ' + typeof VisualFeedbackWidget);
                 
-                // Test basic methods availability
-                const testWidget = new VisualFeedbackWidget();
-                log('📝 Testing method availability...');
-                log('✅ show() method: ' + typeof testWidget.show);
-                log('✅ open() method: ' + typeof testWidget.open);
-                log('✅ hide() method: ' + typeof testWidget.hide);
-                log('✅ close() method: ' + typeof testWidget.close);
-                log('✅ captureScreenshot() method: ' + typeof testWidget.captureScreenshot);
-                log('✅ startRecording() method: ' + typeof testWidget.startRecording);
-                log('✅ getSystemInfo() method: ' + typeof testWidget.getSystemInfo);
-                log('✅ toggle() method: ' + typeof testWidget.toggle);
-                log('✅ isOpen() method: ' + typeof testWidget.isOpen);
-                log('🎉 All methods are available!');
+                // Auto-initialize widget with correct configuration
+                initializeWidget();
             } else {
                 updateStatus('Widget failed to load!', 'error');
                 log('❌ VisualFeedbackWidget is not available');
             }
         });
         
-        function initializeWidget() {
+        window.initializeWidget = function() {
             try {
+                log('🚀 Starting widget initialization...');
+                
+                // Configure with settings from config.js
+                if (!window.WIDGET_CONFIG) {
+                    throw new Error('Widget configuration not found! Please copy config.example.js to config.js and update it with your settings.');
+                }
+                
                 widget = new VisualFeedbackWidget({
-                    position: 'bottom-right',
-                    theme: 'modern',
-                    apiEndpoint: '/api/test-endpoint',
+                    position: window.WIDGET_CONFIG.position,
+                    theme: window.WIDGET_CONFIG.theme,
+                    apiUrl: window.WIDGET_CONFIG.apiUrl,
+                    projectId: window.WIDGET_CONFIG.projectId,
                     autoInit: true,
-                    debug: true
+                    debugMode: window.WIDGET_CONFIG.debugMode
                 });
                 
                 log('✅ Widget initialized successfully');
-                log('🔧 Widget instance: ' + typeof widget);
                 updateStatus('Widget initialized successfully!', 'success');
                 
                 // Test if widget has modal
@@ -181,36 +180,36 @@
                 log('❌ Error initializing widget: ' + error.message);
                 updateStatus('Widget initialization failed!', 'error');
             }
-        }
+        };
         
-        function showWidget() {
+        window.showWidget = function() {
             if (widget) {
                 widget.show();
                 log('📺 Widget show() called');
             } else {
                 log('❌ Widget not initialized. Call initializeWidget() first.');
             }
-        }
+        };
         
-        function testScreenshot() {
+        window.testScreenshot = function() {
             if (widget) {
                 log('📸 Testing screenshot functionality...');
                 widget.captureScreenshot();
             } else {
                 log('❌ Widget not initialized. Call initializeWidget() first.');
             }
-        }
+        };
         
-        function testRecording() {
+        window.testRecording = function() {
             if (widget) {
                 log('🎥 Testing recording functionality...');
                 widget.startRecording();
             } else {
                 log('❌ Widget not initialized. Call initializeWidget() first.');
             }
-        }
+        };
         
-        function testSystemInfo() {
+        window.testSystemInfo = function() {
             if (widget) {
                 log('💻 Testing system info capture...');
                 const info = widget.getSystemInfo();
@@ -218,7 +217,7 @@
             } else {
                 log('❌ Widget not initialized. Call initializeWidget() first.');
             }
-        }
+        };
         
         // Test page content for screenshot
         document.body.innerHTML += `

@@ -1,4 +1,5 @@
 import { WidgetConfig, TicketData, TicketResponse, ApiResponse, UploadResponse, AnalyticsEvent } from './types';
+import { StorageManager } from '../utils/storage-manager';
 
 export class ApiClient {
   private config: WidgetConfig;
@@ -16,10 +17,10 @@ export class ApiClient {
     
     const payload = {
       ...data,
-      organization_id: this.config.orgId
+      project_id: this.config.projectId
     };
 
-    return this.request('POST', url, payload);
+    return this.requestWithAuth('POST', url, payload);
   }
 
   async uploadFile(file: File, ticketId?: string): Promise<ApiResponse<UploadResponse>> {
@@ -27,13 +28,13 @@ export class ApiClient {
     
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('organization_id', this.config.orgId);
+    formData.append('project_id', this.config.projectId);
     
     if (ticketId) {
       formData.append('ticket_id', ticketId);
     }
 
-    return this.request('POST', url, formData, {
+    return this.requestWithAuth('POST', url, formData, {
       headers: {
         'X-Widget-API-Key': this.config.apiKey
       }
@@ -42,21 +43,15 @@ export class ApiClient {
 
   async getTicketStatus(ticketId: string): Promise<ApiResponse<TicketResponse>> {
     const url = `${this.baseUrl}/widget/tickets/${ticketId}`;
-    return this.request('GET', url);
+    return this.requestWithAuth('GET', url);
   }
 
   async trackEvent(event: AnalyticsEvent): Promise<ApiResponse<void>> {
     const url = `${this.baseUrl}/widget/analytics`;
-    return this.request('POST', url, event);
+    return this.requestWithAuth('POST', url, event);
   }
 
-  async validateApiKey(): Promise<ApiResponse<{ valid: boolean; organization: string }>> {
-    const url = `${this.baseUrl}/widget/validate`;
-    return this.request('POST', url, { 
-      api_key: this.config.apiKey,
-      organization_id: this.config.orgId 
-    });
-  }
+  // API key validation removed - using user authentication instead
 
   private async request(
     method: string,
@@ -67,9 +62,14 @@ export class ApiClient {
     const isFormData = data instanceof FormData;
     
     const defaultHeaders: Record<string, string> = {
-      'X-Widget-API-Key': this.config.apiKey,
-      'X-Organization-ID': this.config.orgId
+      'X-Project-ID': this.config.projectId
     };
+
+    // Add authentication header if user is logged in
+    const accessToken = StorageManager.getAccessToken();
+    if (accessToken) {
+      defaultHeaders['Authorization'] = `Bearer ${accessToken}`;
+    }
 
     if (!isFormData) {
       defaultHeaders['Content-Type'] = 'application/json';
@@ -170,15 +170,95 @@ export class ApiClient {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  public setApiKey(apiKey: string): void {
-    this.config.apiKey = apiKey;
-  }
+  // setApiKey removed - using user authentication instead
 
-  public setOrganizationId(orgId: string): void {
-    this.config.orgId = orgId;
+  public setProjectId(projectId: string): void {
+    this.config.projectId = projectId;
   }
 
   public setBaseUrl(baseUrl: string): void {
     this.baseUrl = baseUrl;
+  }
+
+  /**
+   * Check if user is authenticated
+   */
+  public isAuthenticated(): boolean {
+    return StorageManager.isAuthenticated();
+  }
+
+  /**
+   * Get current user info
+   */
+  public getCurrentUser(): any {
+    return StorageManager.getCurrentUser();
+  }
+
+  /**
+   * Handle 401 Unauthorized responses by attempting token refresh
+   */
+  private async handleUnauthorized(): Promise<boolean> {
+    const refreshToken = StorageManager.getRefreshToken();
+    if (!refreshToken) {
+      return false;
+    }
+
+    try {
+      // Attempt to refresh the token
+      const response = await fetch(`${this.baseUrl}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ refresh_token: refreshToken })
+      });
+
+      if (response.ok) {
+        const authData = await response.json();
+        const session = {
+          access_token: authData.access_token,
+          refresh_token: authData.refresh_token,
+          expires_at: authData.expires_at,
+          user: authData.user
+        };
+
+        StorageManager.storeSession(session);
+        return true;
+      }
+    } catch (error) {
+      console.error('[ApiClient] Token refresh failed:', error);
+    }
+
+    // Refresh failed, clear session
+    StorageManager.clearSession();
+    return false;
+  }
+
+  /**
+   * Enhanced request with automatic token refresh on 401
+   */
+  private async requestWithAuth(
+    method: string,
+    url: string,
+    data?: any,
+    options: RequestInit = {},
+    retryCount: number = 0
+  ): Promise<ApiResponse<any>> {
+    const response = await this.request(method, url, data, options);
+    
+    // If request failed with 401 and we haven't retried yet, try to refresh token
+    if (!response.success && 
+        response.error?.code === 'UNAUTHORIZED' && 
+        retryCount === 0 && 
+        StorageManager.getRefreshToken()) {
+      
+      const refreshed = await this.handleUnauthorized();
+      if (refreshed) {
+        // Retry the original request with new token
+        return this.requestWithAuth(method, url, data, options, retryCount + 1);
+      }
+    }
+
+    return response;
   }
 } 
