@@ -5,6 +5,9 @@ window.WIDGET_CONFIG = {
   // Your API endpoint URL
   apiUrl: 'https://your-api-endpoint.com/api',
   
+  // Your organization ID (required for ticket creation)
+  organizationId: 'your-organization-id',
+  
   // Your project ID  
   projectId: 'your-project-id',
   

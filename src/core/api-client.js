@@ -9,14 +9,51 @@ export class ApiClient {
   }
 
   async createTicket(data) {
-    const url = `${this.baseUrl}/widget/tickets`;
+    const url = `${this.baseUrl}/tickets/create`;
+    
+    console.log('🎫 Creating ticket with data:', data);
+    console.log('🎫 Config organizationId:', this.config.organizationId);
+    
+    // Use organization_id from data or fallback to config
+    const organizationId = data.organization_id || this.config.organizationId;
+    
+    console.log('🎫 Final values:');
+    console.log('  - title:', data.title);
+    console.log('  - organizationId:', organizationId);
+    console.log('  - requester_id:', data.requester_id);
+    
+    // Ensure required fields are present
+    if (!data.title || !organizationId || !data.requester_id) {
+      return {
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Missing required fields: title, organization_id (or config.organizationId), and requester_id',
+          details: { requiredFields: ['title', 'organization_id', 'requester_id'] }
+        }
+      };
+    }
     
     const payload = {
-      ...data,
-      project_id: this.config.projectId
+      title: data.title,
+      description: data.description || '',
+      priority: data.priority || 'medium',
+      category: data.category || 'task', 
+      status: data.status || 'open',
+      organization_id: organizationId,
+      requester_id: data.requester_id,
+      project_id: data.project_id || this.config.projectId || null,
+      assignee_id: data.assignee_id || null,
+      custom_fields: data.metadata || data.custom_fields || null
     };
 
-    return this.requestWithAuth('POST', url, payload);
+    console.log('🎫 Sending payload:', JSON.stringify(payload, null, 2));
+    
+    const result = await this.requestWithAuth('POST', url, payload);
+    
+    console.log('🎫 API Response:', result);
+    
+    return result;
   }
 
   async uploadFile(file, ticketId) {
@@ -143,6 +180,14 @@ export class ApiClient {
     return this.config.projectId;
   }
 
+  setOrganizationId(organizationId) {
+    this.config.organizationId = organizationId;
+  }
+
+  getOrganizationId() {
+    return this.config.organizationId;
+  }
+
   setBaseUrl(baseUrl) {
     this.baseUrl = baseUrl;
   }
@@ -172,6 +217,7 @@ export class ApiClient {
     return {
       baseUrl: this.baseUrl,
       projectId: this.config.projectId,
+      organizationId: this.config.organizationId,
       retryAttempts: this.retryAttempts,
       retryDelay: this.retryDelay
     };

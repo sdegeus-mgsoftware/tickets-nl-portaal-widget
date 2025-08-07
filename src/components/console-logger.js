@@ -143,19 +143,74 @@ export default class ConsoleLogger {
       const startTime = Date.now();
       const [resource, config] = args;
       
+      // Capture request payload
+      let requestPayload = null;
+      let requestHeaders = {};
+      
+      if (config) {
+        // Capture request headers
+        if (config.headers) {
+          requestHeaders = config.headers instanceof Headers 
+            ? Object.fromEntries(config.headers.entries())
+            : config.headers;
+        }
+        
+        // Capture request body/payload
+        if (config.body) {
+          try {
+            if (typeof config.body === 'string') {
+              requestPayload = config.body;
+            } else if (config.body instanceof FormData) {
+              requestPayload = 'FormData: ' + Array.from(config.body.entries()).map(([k, v]) => `${k}=${v}`).join(', ');
+            } else if (config.body instanceof URLSearchParams) {
+              requestPayload = config.body.toString();
+            } else {
+              requestPayload = config.body.toString();
+            }
+          } catch (e) {
+            requestPayload = '[Unable to capture payload]';
+          }
+        }
+      }
+      
       try {
         const response = await originalFetch(...args);
         
-        // Log successful request
+        // Clone response to read body without consuming original
+        const responseClone = response.clone();
+        let responseData = null;
+        
+        try {
+          // Try to read response as text
+          const responseText = await responseClone.text();
+          responseData = responseText;
+          
+          // If it looks like JSON, try to parse and format it
+          if (responseText && (responseText.startsWith('{') || responseText.startsWith('['))) {
+            try {
+              const jsonData = JSON.parse(responseText);
+              responseData = JSON.stringify(jsonData, null, 2);
+            } catch (e) {
+              // Keep as text if JSON parsing fails
+            }
+          }
+        } catch (e) {
+          responseData = '[Unable to read response]';
+        }
+        
+        // Log successful request with payload and response data
         this.captureNetworkLog({
           method: config?.method || 'GET',
           url: typeof resource === 'string' ? resource : resource.url,
           status: response.status,
           statusText: response.statusText,
           duration: Date.now() - startTime,
-          size: response.headers.get('content-length') || 'unknown',
+          size: response.headers.get('content-length') || responseData?.length || 'unknown',
           type: 'fetch',
           headers: this.getResponseHeaders(response),
+          requestHeaders: requestHeaders,
+          requestPayload: requestPayload,
+          responseData: responseData,
           timestamp: Date.now()
         });
         
@@ -170,6 +225,8 @@ export default class ConsoleLogger {
           duration: Date.now() - startTime,
           size: 0,
           type: 'fetch',
+          requestHeaders: requestHeaders,
+          requestPayload: requestPayload,
           error: error.message,
           timestamp: Date.now()
         });
@@ -184,11 +241,14 @@ export default class ConsoleLogger {
    */
   interceptXHR() {
     const originalXHR = window.XMLHttpRequest;
+    const self = this;
     
     window.XMLHttpRequest = function() {
       const xhr = new originalXHR();
       let startTime;
       let requestData = {};
+      let requestPayload = null;
+      let requestHeaders = {};
       
       // Override open method
       const originalOpen = xhr.open;
@@ -198,12 +258,56 @@ export default class ConsoleLogger {
         return originalOpen.apply(this, [method, url, ...args]);
       };
       
+      // Override setRequestHeader to capture headers
+      const originalSetRequestHeader = xhr.setRequestHeader;
+      xhr.setRequestHeader = function(name, value) {
+        requestHeaders[name] = value;
+        return originalSetRequestHeader.apply(this, [name, value]);
+      };
+      
       // Override send method
       const originalSend = xhr.send;
       xhr.send = function(...args) {
+        // Capture request payload
+        if (args.length > 0 && args[0]) {
+          try {
+            if (typeof args[0] === 'string') {
+              requestPayload = args[0];
+            } else if (args[0] instanceof FormData) {
+              requestPayload = 'FormData: ' + Array.from(args[0].entries()).map(([k, v]) => `${k}=${v}`).join(', ');
+            } else if (args[0] instanceof URLSearchParams) {
+              requestPayload = args[0].toString();
+            } else {
+              requestPayload = args[0].toString();
+            }
+          } catch (e) {
+            requestPayload = '[Unable to capture payload]';
+          }
+        }
+        
         // Set up event listeners
         xhr.addEventListener('loadend', () => {
           const duration = Date.now() - startTime;
+          
+          // Capture response data
+          let responseData = null;
+          try {
+            if (xhr.responseText) {
+              responseData = xhr.responseText;
+              
+              // Try to format JSON responses
+              if (responseData.startsWith('{') || responseData.startsWith('[')) {
+                try {
+                  const jsonData = JSON.parse(responseData);
+                  responseData = JSON.stringify(jsonData, null, 2);
+                } catch (e) {
+                  // Keep as text if JSON parsing fails
+                }
+              }
+            }
+          } catch (e) {
+            responseData = '[Unable to read response]';
+          }
           
           // Capture the network log
           const logEntry = {
@@ -214,12 +318,15 @@ export default class ConsoleLogger {
             duration: duration,
             size: xhr.responseText?.length || 0,
             type: 'xhr',
-            headers: this.parseResponseHeaders(xhr.getAllResponseHeaders()),
+            headers: self.parseResponseHeaders(xhr.getAllResponseHeaders()),
+            requestHeaders: requestHeaders,
+            requestPayload: requestPayload,
+            responseData: responseData,
             timestamp: Date.now()
           };
           
           // Add to network logs
-          this.captureNetworkLog(logEntry);
+          self.captureNetworkLog(logEntry);
         });
         
         return originalSend.apply(this, args);

@@ -634,10 +634,6 @@ export default class VisualFeedbackModal {
       
       // Check authentication first
       const authState = this.authHandler.getState();
-      console.log('🔍 Auth state:', authState);
-      console.log('🔍 User object:', authState.user);
-      console.log('🔍 User ID:', authState.user?.id);
-      
       if (!authState.isAuthenticated) {
         throw new Error('You must be logged in to submit feedback');
       }
