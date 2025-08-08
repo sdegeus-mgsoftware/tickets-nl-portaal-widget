@@ -6,6 +6,15 @@ export class ApiClient {
     this.baseUrl = config.apiUrl || 'https://your-api-domain.com/api';
     this.retryAttempts = 3;
     this.retryDelay = 1000;
+    this.authHandler = null; // Will be set by the widget
+  }
+
+  /**
+   * Set the authentication handler for session validation
+   */
+  setAuthHandler(authHandler) {
+    this.authHandler = authHandler;
+    console.log('🔗 [ApiClient] AuthHandler connected for automatic session validation');
   }
 
   async createTicket(data) {
@@ -157,7 +166,32 @@ export class ApiClient {
   }
 
   async requestWithAuth(method, url, data, options = {}) {
-    // Use the existing request method which already handles auth
+    console.log(`🔐 [ApiClient] Making authenticated ${method} request to: ${url}`);
+    
+    // Validate session before making API call if authHandler is available
+    if (this.authHandler) {
+      console.log('🔍 [ApiClient] Validating session before API call...');
+      
+      const isValid = await this.authHandler.validateSession();
+      
+      if (!isValid) {
+        console.log('❌ [ApiClient] Session validation failed - request aborted');
+        return {
+          success: false,
+          error: {
+            code: 'AUTHENTICATION_REQUIRED',
+            message: 'Session expired or invalid. Please log in again.',
+            details: { requiresLogin: true }
+          }
+        };
+      }
+      
+      console.log('✅ [ApiClient] Session validated successfully - proceeding with API call');
+    } else {
+      console.log('⚠️ [ApiClient] No authHandler available - proceeding without session validation');
+    }
+
+    // Use the existing request method which already handles auth headers
     return this.request(method, url, data, options);
   }
 

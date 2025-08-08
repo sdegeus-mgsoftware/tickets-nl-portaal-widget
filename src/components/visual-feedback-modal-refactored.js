@@ -49,6 +49,9 @@ export default class VisualFeedbackModal {
     this.authHandler = new AuthenticationHandler(this.options);
     this.submissionHandler = new SubmissionHandler(this.options);
     
+    // Connect AuthHandler to ApiClient for automatic session validation
+    this.submissionHandler.setAuthHandler(this.authHandler);
+    
     // These will be initialized after modal elements are created
     this.tabController = null;
     this.dataCollector = null;

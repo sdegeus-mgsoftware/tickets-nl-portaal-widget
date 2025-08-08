@@ -146,6 +146,14 @@ Thank you for your detailed feedback!`);
   }
 
   /**
+   * Set authentication handler for session validation
+   */
+  setAuthHandler(authHandler) {
+    this.authHandler = authHandler;
+    this.apiClient.setAuthHandler(authHandler);
+  }
+
+  /**
    * Update API client configuration
    */
   updateConfig(newConfig) {
@@ -155,6 +163,11 @@ Thank you for your detailed feedback!`);
         organizationId: newConfig.organizationId || this.options.organizationId,
         projectId: newConfig.projectId || this.options.projectId
       });
+      
+      // Re-connect auth handler if it exists
+      if (this.authHandler) {
+        this.apiClient.setAuthHandler(this.authHandler);
+      }
     }
     
     this.options = { ...this.options, ...newConfig };

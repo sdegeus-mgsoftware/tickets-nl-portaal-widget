@@ -64,6 +64,10 @@ export class StorageManager {
     }
 
     try {
+      console.log('💾 [StorageManager] Storing session:', JSON.stringify(session, null, 2));
+      console.log('🔑 [StorageManager] Access token present:', !!session.access_token);
+      console.log('🔄 [StorageManager] Refresh token present:', !!session.refresh_token);
+      
       const sessionData = {
         version: this.STORAGE_VERSION,
         data: session,
@@ -77,12 +81,16 @@ export class StorageManager {
       // Also store tokens in MG Tickets API format for compatibility
       if (session.access_token) {
         localStorage.setItem(this.ACCESS_TOKEN_KEY, session.access_token);
+        console.log('✅ [StorageManager] Access token stored');
       }
       if (session.refresh_token) {
         localStorage.setItem(this.REFRESH_TOKEN_KEY, session.refresh_token);
+        console.log('✅ [StorageManager] Refresh token stored');
+      } else {
+        console.log('❌ [StorageManager] No refresh token to store!');
       }
       
-
+      console.log('✅ [StorageManager] Session stored successfully');
       return true;
     } catch (error) {
       console.error('[StorageManager] Failed to store session:', error);
@@ -91,7 +99,7 @@ export class StorageManager {
   }
 
   /**
-   * Retrieve authentication session
+   * Retrieve authentication session (auto-clears if expired)
    */
   static getSession() {
     if (!this.isStorageAvailable()) {
@@ -118,13 +126,53 @@ export class StorageManager {
       const session = sessionData.data;
       const expired = this.isSessionExpired(session);
       if (expired) {
-        this.clearSession();
+        // Do not clear storage here to preserve the refresh token for the
+        // refresh flow. Simply signal that the current session is not valid.
         return null;
       }
 
       return session;
     } catch (error) {
       console.error('[StorageManager] Failed to retrieve session:', error);
+      this.clearSession(); // Clear corrupted data
+      return null;
+    }
+  }
+
+  /**
+   * Retrieve raw session data without expiration check (for refresh token access)
+   */
+  static getRawSession() {
+    if (!this.isStorageAvailable()) {
+      console.log('❌ [StorageManager] localStorage not available');
+      return null;
+    }
+
+    try {
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      if (!stored) {
+        console.log('❌ [StorageManager] No stored session data found');
+        return null;
+      }
+
+      const decrypted = this.decrypt(stored);
+      const sessionData = JSON.parse(decrypted);
+
+      // Check version compatibility
+      if (sessionData.version !== this.STORAGE_VERSION) {
+        console.warn('[StorageManager] Version mismatch, clearing old session');
+        this.clearSession();
+        return null;
+      }
+
+      console.log('🔍 [StorageManager] Raw session retrieved:', JSON.stringify(sessionData.data, null, 2));
+      console.log('🔑 [StorageManager] Access token in raw session:', !!sessionData.data?.access_token);
+      console.log('🔄 [StorageManager] Refresh token in raw session:', !!sessionData.data?.refresh_token);
+
+      // Return session data without expiration check
+      return sessionData.data;
+    } catch (error) {
+      console.error('[StorageManager] Failed to retrieve raw session:', error);
       this.clearSession(); // Clear corrupted data
       return null;
     }
