@@ -14,22 +14,15 @@ export class ApiClient {
    */
   setAuthHandler(authHandler) {
     this.authHandler = authHandler;
-    console.log('🔗 [ApiClient] AuthHandler connected for automatic session validation');
   }
 
   async createTicket(data) {
     const url = `${this.baseUrl}/tickets/create`;
     
-    console.log('🎫 Creating ticket with data:', data);
-    console.log('🎫 Config organizationId:', this.config.organizationId);
     
     // Use organization_id from data or fallback to config
     const organizationId = data.organization_id || this.config.organizationId;
     
-    console.log('🎫 Final values:');
-    console.log('  - title:', data.title);
-    console.log('  - organizationId:', organizationId);
-    console.log('  - requester_id:', data.requester_id);
     
     // Ensure required fields are present
     if (!data.title || !organizationId || !data.requester_id) {
@@ -56,11 +49,8 @@ export class ApiClient {
       custom_fields: data.metadata || data.custom_fields || null
     };
 
-    console.log('🎫 Sending payload:', JSON.stringify(payload, null, 2));
     
     const result = await this.requestWithAuth('POST', url, payload);
-    
-    console.log('🎫 API Response:', result);
     
     return result;
   }
@@ -166,16 +156,13 @@ export class ApiClient {
   }
 
   async requestWithAuth(method, url, data, options = {}) {
-    console.log(`🔐 [ApiClient] Making authenticated ${method} request to: ${url}`);
     
     // Validate session before making API call if authHandler is available
     if (this.authHandler) {
-      console.log('🔍 [ApiClient] Validating session before API call...');
       
       const isValid = await this.authHandler.validateSession();
       
       if (!isValid) {
-        console.log('❌ [ApiClient] Session validation failed - request aborted');
         return {
           success: false,
           error: {
@@ -186,9 +173,8 @@ export class ApiClient {
         };
       }
       
-      console.log('✅ [ApiClient] Session validated successfully - proceeding with API call');
     } else {
-      console.log('⚠️ [ApiClient] No authHandler available - proceeding without session validation');
+      
     }
 
     // Use the existing request method which already handles auth headers

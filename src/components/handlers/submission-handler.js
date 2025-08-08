@@ -20,12 +20,9 @@ export default class SubmissionHandler {
    */
   async submitTicket(ticketData) {
     try {
-      console.log('🎯 Creating ticket...');
-      
       const result = await this.apiClient.createTicket(ticketData);
       
               if (result.success) {
-          console.log('✅ Ticket created successfully:', result.data?.ticket?.ticket_number || result.ticket?.ticket_number);
           // Handle both response formats: { data: { ticket } } and { ticket }
           const ticket = result.data?.ticket || result.ticket;
           return { success: true, ticket: ticket };
@@ -33,7 +30,6 @@ export default class SubmissionHandler {
         throw new Error(result.error.message);
       }
     } catch (error) {
-      console.error('❌ Error creating ticket:', error);
       return { success: false, error: error.message };
     }
   }
@@ -43,8 +39,6 @@ export default class SubmissionHandler {
    */
   async submitLegacyFeedback(feedbackData) {
     try {
-      console.log('📤 Using legacy feedback submission...');
-      
       if (!this.options.apiEndpoint) {
         throw new Error('No API endpoint configured for legacy feedback submission');
       }
@@ -64,7 +58,6 @@ export default class SubmissionHandler {
       const result = await response.json();
       return { success: true, data: result };
     } catch (error) {
-      console.error('❌ Error submitting legacy feedback:', error);
       return { success: false, error: error.message };
     }
   }

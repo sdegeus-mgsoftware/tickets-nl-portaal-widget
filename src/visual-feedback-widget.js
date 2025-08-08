@@ -83,20 +83,17 @@ export default class VisualFeedbackWidget {
   validateConfig() {
     // Validate API endpoint
     if (!this.config.apiEndpoint || typeof this.config.apiEndpoint !== 'string') {
-      console.warn('VisualFeedbackWidget: apiEndpoint should be a valid URL string');
     }
     
     // Validate position
     const validPositions = ['bottom-right', 'bottom-left', 'top-right', 'top-left'];
     if (!validPositions.includes(this.config.position)) {
-      console.warn('VisualFeedbackWidget: Invalid position, using default');
       this.config.position = 'bottom-right';
     }
     
     // Validate theme
     const validThemes = ['default', 'dark', 'light', 'minimal'];
     if (!validThemes.includes(this.config.theme)) {
-      console.warn('VisualFeedbackWidget: Invalid theme, using default');
       this.config.theme = 'default';
     }
     
@@ -104,7 +101,6 @@ export default class VisualFeedbackWidget {
     const callbacks = ['onOpen', 'onClose', 'onSubmit', 'onError'];
     callbacks.forEach(callback => {
       if (this.config[callback] && typeof this.config[callback] !== 'function') {
-        console.warn(`VisualFeedbackWidget: ${callback} should be a function`);
         this.config[callback] = null;
       }
     });
@@ -140,7 +136,6 @@ export default class VisualFeedbackWidget {
     
     // Log initialization if debug mode is enabled
     if (this.config.debugMode) {
-      console.log('VisualFeedbackWidget: Initialized with config:', this.config);
     }
   }
   
@@ -394,7 +389,6 @@ export default class VisualFeedbackWidget {
     }
     
     if (this.config.debugMode) {
-      console.error('VisualFeedbackWidget: Error occurred:', error);
     }
   }
   

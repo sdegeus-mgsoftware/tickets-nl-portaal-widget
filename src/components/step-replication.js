@@ -92,7 +92,6 @@ export default class StepReplication {
       }
 
     } catch (error) {
-      console.error('Error starting screen recording:', error);
       throw error;
     }
   }

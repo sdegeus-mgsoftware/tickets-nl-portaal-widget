@@ -225,7 +225,6 @@ export default class DataCollector {
       return feedbackData;
       
     } catch (error) {
-      console.error('❌ Error collecting comprehensive feedback data:', error);
       return null;
     }
   }
@@ -241,7 +240,6 @@ export default class DataCollector {
       }
       return null;
     } catch (error) {
-      console.error('Error getting screenshot data:', error);
       return null;
     }
   }
@@ -272,7 +270,6 @@ export default class DataCollector {
       
       return messages;
     } catch (error) {
-      console.error('Error getting chat messages:', error);
       return [];
     }
   }

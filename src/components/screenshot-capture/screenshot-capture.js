@@ -233,7 +233,6 @@ export default class ScreenshotCapture {
       const result = await this.screenshotProcessor.takeScreenshot();
       return result;
     } catch (error) {
-      console.error('Screenshot capture failed:', error);
       throw error;
     }
   }

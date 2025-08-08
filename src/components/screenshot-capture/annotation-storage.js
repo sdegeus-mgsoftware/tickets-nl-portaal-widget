@@ -268,7 +268,6 @@ export default class AnnotationStorage {
         return true;
       }
     } catch (error) {
-      console.error('Failed to import annotations:', error);
     }
     return false;
   }
@@ -278,7 +277,6 @@ export default class AnnotationStorage {
    */
   loadAnnotations(annotationsArray) {
     if (!Array.isArray(annotationsArray)) {
-      console.error('Invalid annotations array provided');
       return false;
     }
 

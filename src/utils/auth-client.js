@@ -9,17 +9,13 @@ export class AuthClient {
     this.baseUrl = baseUrl;
     this.listeners = [];
     
-    console.log('🏗️ [AuthClient] Initializing AuthClient...');
+    
     
     // Initialize state from stored session (use getRawSession to preserve refresh token)
     const storedSession = StorageManager.getRawSession();
     const isAuth = storedSession && !StorageManager.isSessionExpired(storedSession);
     
-    console.log('🔍 [AuthClient] Constructor - stored session found:', !!storedSession);
-    console.log('🔑 [AuthClient] Constructor - access token present:', !!storedSession?.access_token);
-    console.log('🔄 [AuthClient] Constructor - refresh token present:', !!storedSession?.refresh_token);
-    console.log('⏰ [AuthClient] Constructor - session expired:', storedSession ? StorageManager.isSessionExpired(storedSession) : 'N/A');
-    console.log('🔐 [AuthClient] Constructor - initial auth state:', isAuth ? 'authenticated' : 'not authenticated');
+    
     
     this.currentState = {
       isAuthenticated: isAuth,
@@ -68,7 +64,6 @@ export class AuthClient {
         return false;
       }
     } catch (error) {
-      console.error('[AuthClient] Session validation error:', error);
       this.currentState.isAuthenticated = false;
       StorageManager.clearSession();
       return false;
@@ -134,7 +129,6 @@ export class AuthClient {
       }
 
       const authData = await response.json();
-      console.log('🔍 [AuthClient] Login API response:', JSON.stringify(authData, null, 2));
       
       // Transform MG Tickets API response to match our AuthSession interface
       const session = {
@@ -150,13 +144,10 @@ export class AuthClient {
         }
       };
 
-      console.log('💾 [AuthClient] Session to store:', JSON.stringify(session, null, 2));
-      console.log('🔑 [AuthClient] Refresh token present:', !!session.refresh_token);
-
       // Store session
       const stored = StorageManager.storeSession(session);
       if (!stored) {
-        console.warn('[AuthClient] Failed to store session in localStorage');
+        
       }
 
       this.updateState({
@@ -214,13 +205,11 @@ export class AuthClient {
       });
 
       if (!response.ok) {
-        console.warn('[AuthClient] Server logout failed, but local session cleared');
       }
 
       return { success: true };
 
     } catch (error) {
-      console.error('[AuthClient] Logout error:', error);
       
       // Clear local session even if API call fails
       StorageManager.clearSession();
@@ -241,16 +230,14 @@ export class AuthClient {
    * Verify/refresh authentication session using MG Tickets API
    */
   async refreshSession() {
-    console.log('🔄 [AuthClient] Starting session refresh...');
+    
     
     // Use getRawSession to access refresh token even if access token is expired
     const currentSession = StorageManager.getRawSession();
     if (!currentSession || !currentSession.refresh_token) {
-      console.log('❌ [AuthClient] No refresh token available for session refresh');
       return { success: false, error: 'No refresh token available' };
     }
 
-    console.log('🔑 [AuthClient] Found refresh token, calling API refresh endpoint');
     this.updateState({ isLoading: true });
 
     try {
@@ -266,13 +253,9 @@ export class AuthClient {
         })
       });
 
-      console.log(`📡 [AuthClient] Refresh API response status: ${response.status}`);
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.error || `Session refresh failed: ${response.status}`;
-        
-        console.log('❌ [AuthClient] Session refresh failed:', errorMessage);
         
         // Refresh failed, clear session
         StorageManager.clearSession();
@@ -284,13 +267,10 @@ export class AuthClient {
           session: null,
           error: 'Session expired'
         });
-
-        console.log('🧹 [AuthClient] Cleared session due to refresh failure');
         return { success: false, error: errorMessage };
       }
 
       const authData = await response.json();
-      console.log('✅ [AuthClient] Session refresh successful, updating tokens');
       
       // Update session with new tokens from refresh response
       const session = {
@@ -307,8 +287,6 @@ export class AuthClient {
       };
 
       StorageManager.storeSession(session);
-      console.log('💾 [AuthClient] New session tokens stored successfully');
-      console.log('👤 [AuthClient] User still authenticated:', session.user.email);
 
       this.updateState({
         isLoading: false,
@@ -317,12 +295,9 @@ export class AuthClient {
         session: session,
         error: null
       });
-
-      console.log('🎉 [AuthClient] Session refresh completed successfully - user remains logged in');
       return { success: true, data: session };
 
     } catch (error) {
-      console.error('💥 [AuthClient] Session refresh error:', error);
       
       StorageManager.clearSession();
       
@@ -333,8 +308,6 @@ export class AuthClient {
         session: null,
         error: 'Session refresh failed'
       });
-
-      console.log('🧹 [AuthClient] Cleared session due to refresh error');
       return { success: false, error: error.message };
     }
   }
@@ -343,41 +316,30 @@ export class AuthClient {
    * Validate current session
    */
   async validateSession() {
-    console.log('🔍 [AuthClient] Validating current session...');
     
     // First try to get valid session (auto-clears if expired)
     const session = StorageManager.getSession();
     if (session) {
-      console.log('✅ [AuthClient] Session is still valid - no refresh needed');
       return true;
     }
 
     // If no valid session, check for raw session data (may contain refresh token)
-    console.log('🔍 [AuthClient] No valid session found, checking for refresh token...');
     const rawSession = StorageManager.getRawSession();
     
     if (!rawSession) {
-      console.log('❌ [AuthClient] No session data found at all - validation failed');
       return false;
     }
 
     // Check if we have a refresh token
     if (!rawSession.refresh_token) {
-      console.log('❌ [AuthClient] No refresh token available - clearing expired session');
       StorageManager.clearSession();
       return false;
     }
 
-    console.log('🔑 [AuthClient] Found refresh token, attempting session refresh...');
     
     // Try to refresh using the available refresh token
     const refreshResult = await this.refreshSession();
     
-    if (refreshResult.success) {
-      console.log('✅ [AuthClient] Session validation successful after refresh');
-    } else {
-      console.log('❌ [AuthClient] Session validation failed - refresh unsuccessful');
-    }
     
     return refreshResult.success;
   }

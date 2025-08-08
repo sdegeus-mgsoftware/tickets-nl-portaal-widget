@@ -224,7 +224,6 @@ export default class LoginForm {
         // Success is handled by the parent component
       }
     } catch (error) {
-      console.error('Login error:', error);
       this.showError('An unexpected error occurred. Please try again.');
     } finally {
       this.setLoading(false);

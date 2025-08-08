@@ -72,7 +72,6 @@ export default class SystemInfo {
 
       return this.systemData;
     } catch (error) {
-      console.error('Error gathering system info:', error);
       return this.getBasicSystemInfo();
     } finally {
       this.isGathering = false;
@@ -140,7 +139,7 @@ export default class SystemInfo {
       const ipData = await ipResponse.json();
       ip = ipData.ip;
     } catch (error) {
-      }
+    }
     
     return {
       ip: ip,
@@ -419,7 +418,7 @@ export default class SystemInfo {
         info.quota = estimate.quota;
         info.usage = estimate.usage;
       } catch (error) {
-        }
+      }
     }
 
     return info;

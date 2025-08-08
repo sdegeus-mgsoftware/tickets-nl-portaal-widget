@@ -643,14 +643,13 @@ export class MetadataCollector {
       window.__widgetJSErrors = [];
       window.__widgetUnhandledRejections = [];
       
-      // Track console errors
+      // Track console errors without printing to console
       const originalError = console.error;
       console.error = function(...args) {
         window.__widgetConsoleErrors.push({
           timestamp: new Date().toISOString(),
           message: args.join(' ')
         });
-        originalError.apply(console, args);
       };
       
       // Track JavaScript errors

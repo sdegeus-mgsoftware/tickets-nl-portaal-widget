@@ -49,7 +49,6 @@ The modal has been minimized so you can interact with the page.
       
       return { success: true };
     } catch (error) {
-      console.error('Error starting recording:', error);
       return { 
         success: false, 
         error: 'Unable to start screen recording. Please ensure you grant permission to capture your screen.' 

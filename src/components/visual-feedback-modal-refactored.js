@@ -435,7 +435,6 @@ export default class VisualFeedbackModal {
       }
 
     } catch (error) {
-      console.error('Error proceeding with feedback capture:', error);
       this.showLoginScreen(); // Fall back to login screen
     }
   }
@@ -464,7 +463,6 @@ export default class VisualFeedbackModal {
       // Additional wait to ensure screenshot processing is complete
       await new Promise(resolve => setTimeout(resolve, 300));
     } catch (error) {
-      console.error('Error taking screenshot:', error);
       this.hideScreenshotLoadingIndicator();
       return;
     }
@@ -498,7 +496,6 @@ export default class VisualFeedbackModal {
       }
 
     } catch (error) {
-      console.error('Error showing visual feedback modal:', error);
       this.hide();
     }
   }
@@ -633,8 +630,6 @@ export default class VisualFeedbackModal {
    */
   async handleSubmit() {
     try {
-      console.log('🚀 Starting feedback submission...');
-      
       // Check authentication first
       const authState = this.authHandler.getState();
       if (!authState.isAuthenticated) {
@@ -691,7 +686,6 @@ export default class VisualFeedbackModal {
       }
 
     } catch (error) {
-      console.error('❌ Error submitting feedback:', error);
       this.submissionHandler.showErrorMessage(error.message);
     }
   }
